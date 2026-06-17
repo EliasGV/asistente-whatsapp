@@ -2,6 +2,6 @@
   {
     "question": "Ayuda",
     "keywords": ["ayuda", "menu", "menú", "comandos", "hola"],
-    "answer": "Soy tu asistente personal. Puedes escribirme: metro, tráfico, linkedin o ayuda."
+    "answer": "Soy tu asistente personal. Puedes escribirme: metro, noticias, linkedin, post <tema>, minuta <texto>, aprobar o ayuda."
   }
 ]
