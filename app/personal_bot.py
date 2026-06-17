@@ -3,6 +3,7 @@ from app.linkedin import build_linkedin_ideas, build_linkedin_post
 from app.metro import build_morning_report
 from app.news import build_news_digest
 from app.text_tools import build_minute
+from app.vehicle_restriction import build_vehicle_restriction_report
 
 
 async def answer_message(text: str) -> str:
@@ -16,6 +17,9 @@ async def answer_message(text: str) -> str:
 
     if normalized.startswith("noticias") or normalized in {"news", "actualidad"}:
         return await build_news_digest()
+
+    if any(word in normalized for word in ["restriccion", "restricción", "sello verde", "patente"]):
+        return build_vehicle_restriction_report(text)
 
     if any(word in normalized for word in ["metro", "trafico", "movilidad", "viaje"]):
         return await build_morning_report()

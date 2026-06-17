@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     linkedin_ideas_time: str = "12:00"
     timezone: str = "America/Santiago"
     task_secret: str = ""
+    vehicle_one_year: int = 2010
+    vehicle_one_digit: str = "2"
+    vehicle_two_year: int = 2019
+    vehicle_two_digit: str = "8"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -5,17 +5,18 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from app.config import settings
+from app.vehicle_restriction import build_vehicle_restriction_report
 
 
 METRO_STATUS_URL = "https://www.metro.cl/el-viaje/estado-red"
 LINE_NAMES = {
-    "l1": "Línea 1",
-    "l2": "Línea 2",
-    "l3": "Línea 3",
-    "l4": "Línea 4",
-    "l4a": "Línea 4A",
-    "l5": "Línea 5",
-    "l6": "Línea 6",
+    "l1": "Linea 1",
+    "l2": "Linea 2",
+    "l3": "Linea 3",
+    "l4": "Linea 4",
+    "l4a": "Linea 4A",
+    "l5": "Linea 5",
+    "l6": "Linea 6",
 }
 
 
@@ -38,7 +39,7 @@ def _parse_line_cards(html: str) -> list[dict[str, str]]:
 
     lines = []
     for code, status_html, icon, route_html, details_html in cards:
-        status = _clean_html(status_html).replace("Línea ", "Línea ").strip()
+        status = _clean_html(status_html).replace("Linea ", "Linea ").strip()
         route = _clean_html(route_html)
         details = _clean_html(details_html)
         lines.append(
@@ -63,19 +64,22 @@ async def fetch_metro_status() -> list[dict[str, str]]:
 
 async def build_morning_report() -> str:
     now = datetime.now(ZoneInfo(settings.timezone)).strftime("%H:%M")
+    vehicle_report = build_vehicle_restriction_report()
 
     try:
         lines = await fetch_metro_status()
     except Exception:
         return (
-            f"Buenos días. No pude consultar metro.cl a las {now}.\n\n"
-            "Revisa el estado de la red aquí: https://www.metro.cl/el-viaje/estado-red\n"
-            "Para tráfico Providencia → La Cisterna, abre Google Maps o Waze antes de salir."
+            f"Buenos dias. No pude consultar metro.cl a las {now}.\n\n"
+            "Revisa el estado de la red aqui: https://www.metro.cl/el-viaje/estado-red\n\n"
+            f"{vehicle_report}\n\n"
+            "Para trafico Providencia -> La Cisterna, abre Google Maps o Waze antes de salir."
         )
 
     if not lines:
         return (
-            f"Buenos días. No pude leer el detalle de líneas de Metro a las {now}.\n\n"
+            f"Buenos dias. No pude leer el detalle de lineas de Metro a las {now}.\n\n"
+            f"{vehicle_report}\n\n"
             "Fuente: https://www.metro.cl/el-viaje/estado-red"
         )
 
@@ -90,13 +94,14 @@ async def build_morning_report() -> str:
             for item in problem_lines
         )
     else:
-        metro_summary = "Metro aparece con sus líneas disponibles según metro.cl."
+        metro_summary = "Metro aparece con sus lineas disponibles segun metro.cl."
 
     return (
-        f"Buenos días. Reporte de movilidad {now}\n\n"
+        f"Buenos dias. Reporte de movilidad {now}\n\n"
         f"Metro:\n{metro_summary}\n\n"
-        "Ruta Providencia → La Cisterna:\n"
-        "Si vas en Metro, mira especialmente Línea 1, Línea 2 y combinaciones posibles. "
-        "Si vas en auto, revisa Waze/Google Maps antes de salir porque aún no tengo una API de tráfico conectada.\n\n"
+        f"{vehicle_report}\n\n"
+        "Ruta Providencia -> La Cisterna:\n"
+        "Si vas en Metro, mira especialmente Linea 1, Linea 2 y combinaciones posibles. "
+        "Si vas en auto, revisa Waze/Google Maps antes de salir porque aun no tengo una API de trafico conectada.\n\n"
         "Fuente Metro: https://www.metro.cl/el-viaje/estado-red"
     )
