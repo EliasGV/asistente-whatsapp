@@ -7,14 +7,17 @@ from app.productivity import (
     add_agenda_item,
     add_note,
     add_reminder,
+    add_therapy_memory,
     build_agenda,
     build_daily_notes,
     build_eye_drops_status,
     build_reminders,
+    build_therapy_summary,
     build_work_checklist,
     record_eye_drops,
 )
 from app.text_tools import build_minute, build_post_variant
+from app.transcribe_audio import collect_finished_audio_memories
 from app.vehicle_restriction import build_vehicle_restriction_report
 
 
@@ -34,6 +37,15 @@ async def answer_message(text: str, from_number: str = "") -> str:
 
     if normalized.startswith("nota"):
         return add_note(from_number, text[4:].strip(" :-"))
+
+    if normalized.startswith("recuerdo"):
+        return add_therapy_memory(from_number, text[8:].strip(" :-"))
+
+    if normalized in {"terapia", "resumen terapia", "memoria terapia"}:
+        return build_therapy_summary(from_number)
+
+    if normalized in {"audios", "audio", "transcripciones", "revisar audios"}:
+        return await collect_finished_audio_memories(from_number)
 
     if normalized in {"bitacora", "bitácora", "resumen de hoy"}:
         return build_daily_notes(from_number)

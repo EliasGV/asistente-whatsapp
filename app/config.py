@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     google_state_secret: str = "gmail-2450"
     gmail_access_token: str = ""
     gmail_refresh_token: str = ""
+    transcribe_bucket: str = ""
+    transcribe_language_code: str = "es-US"
+    transcribe_output_prefix: str = "transcripts/"
+    transcribe_audio_prefix: str = "audio/"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

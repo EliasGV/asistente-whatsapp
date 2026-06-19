@@ -8,6 +8,7 @@ from app.linkedin import build_authorization_url, build_linkedin_ideas, exchange
 from app.metro import build_metro_service_report, build_morning_report
 from app.personal_bot import answer_message
 from app.scheduler import start_scheduler
+from app.transcribe_audio import start_whatsapp_audio_transcription
 from app.whatsapp import send_text_message
 
 
@@ -194,10 +195,29 @@ async def receive_message(request: Request) -> dict[str, str]:
         for change in entry.get("changes", []):
             value = change.get("value", {})
             for message in value.get("messages", []):
+                from_number = message["from"]
+                if message.get("type") == "audio":
+                    audio_id = message.get("audio", {}).get("id", "")
+                    try:
+                        await start_whatsapp_audio_transcription(from_number, audio_id, message.get("id", audio_id))
+                        answer = (
+                            "Recibi tu audio y empece a transcribirlo con AWS Transcribe. "
+                            "En unos minutos escribeme: audios. Si ya esta listo, lo guardare como recuerdo para terapia."
+                        )
+                    except Exception as exc:
+                        answer = (
+                            "Recibi tu audio, pero no pude iniciar la transcripcion. "
+                            f"Detalle tecnico: {exc}"
+                        )
+                    try:
+                        await send_text_message(from_number, answer)
+                    except Exception as exc:
+                        print(f"Error sending WhatsApp message: {exc}")
+                    continue
+
                 if message.get("type") != "text":
                     continue
 
-                from_number = message["from"]
                 text = message["text"]["body"]
                 answer = await answer_message(text, from_number)
                 try:

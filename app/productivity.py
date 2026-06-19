@@ -8,6 +8,7 @@ _notes_by_user: dict[str, list[str]] = {}
 _agenda_by_user: dict[str, list[str]] = {}
 _eye_drops_by_user: dict[str, list[str]] = {}
 _reminders_by_user: dict[str, list[str]] = {}
+_therapy_memories_by_user: dict[str, list[str]] = {}
 
 
 def _now_label() -> str:
@@ -92,3 +93,60 @@ def build_reminders(user: str) -> str:
     if not reminders:
         return "No tengo recordatorios manuales guardados."
     return "Recordatorios manuales:\n" + "\n".join(f"- {item}" for item in reminders[-10:])
+
+
+def add_therapy_memory(user: str, text: str) -> str:
+    if not text:
+        return (
+            "Escríbeme el recuerdo después de `recuerdo`.\n\n"
+            "Ejemplo: recuerdo hoy me sentí sobrepasado después de una reunión y quiero hablarlo en terapia."
+        )
+    _therapy_memories_by_user.setdefault(user, []).append(f"{_now_label()} - {text}")
+    return "Lo guardé para tu resumen previo a terapia."
+
+
+def build_therapy_summary(user: str) -> str:
+    memories = _therapy_memories_by_user.get(user, [])
+    if not memories:
+        return (
+            "Todavía no tengo recuerdos guardados para terapia.\n\n"
+            "Puedes agregar uno con: recuerdo <texto>."
+        )
+
+    recent = memories[-12:]
+    text = " ".join(recent).lower()
+    themes = []
+    theme_keywords = {
+        "estrés o sobrecarga": ["estres", "estrés", "sobrecarg", "cansad", "agotad", "ansiedad", "ansioso"],
+        "trabajo y responsabilidades": ["trabajo", "reunión", "reunion", "correo", "municip", "jef", "responsabilidad"],
+        "vínculos o conversaciones difíciles": ["familia", "pareja", "amigo", "convers", "discusión", "discusion"],
+        "salud y autocuidado": ["salud", "gotas", "glaucoma", "dorm", "cuerpo", "médico", "medico"],
+        "decisiones o incertidumbre": ["decidir", "decisión", "decision", "duda", "incertidumbre", "miedo"],
+    }
+    for theme, keywords in theme_keywords.items():
+        if any(keyword in text for keyword in keywords):
+            themes.append(theme)
+
+    if not themes:
+        themes.append("experiencias relevantes de la semana")
+
+    lines = [
+        "Resumen previo a terapia:",
+        "",
+        "Temas que aparecen:",
+    ]
+    lines.extend(f"- {theme}" for theme in themes[:5])
+    lines.append("\nRecuerdos recientes:")
+    lines.extend(f"- {memory}" for memory in recent)
+    lines.append(
+        "\nPreguntas posibles para llevar:\n"
+        "- ¿Qué se repitió emocionalmente en estos días?\n"
+        "- ¿Qué situación me dejó más activado o incómodo?\n"
+        "- ¿Qué necesito pedir, soltar o ordenar?\n"
+        "- ¿Qué señal de autocuidado debería tomar más en serio?"
+    )
+    lines.append(
+        "\nNota: esto es solo una ayuda para preparar la conversación con tu terapeuta, "
+        "no una interpretación clínica."
+    )
+    return "\n".join(lines)
