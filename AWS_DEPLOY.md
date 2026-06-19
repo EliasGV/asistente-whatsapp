@@ -3,11 +3,11 @@
 Arquitectura recomendada:
 
 ```text
-Meta WhatsApp -> API Gateway HTTP API -> Lambda Python/FastAPI
+Meta WhatsApp -> Lambda Function URL -> Lambda Python/FastAPI
                                       -> EventBridge Scheduler
 ```
 
-## Variables de entorno de Lambda
+## Variables De Entorno De Lambda
 
 Configura estas variables en AWS Lambda:
 
@@ -36,38 +36,56 @@ APP_NAME=Asistente Personal WhatsApp
 
 `TASK_SECRET` debe ser un texto largo inventado por ti. Se usa para proteger tareas manuales o programadas.
 
-## Handler de Lambda
+## Handler De Lambda
 
 ```text
 lambda_handler.handler
 ```
 
-## Eventos para EventBridge Scheduler
+## Eventos Para EventBridge Scheduler
 
-Reporte de mañana:
+Reporte 08:00:
 
 ```json
 {
-  "task": "morning-report",
+  "task": "0800-briefing",
   "secret": "EL_MISMO_TASK_SECRET"
 }
 ```
 
-Ideas LinkedIn:
+Gotas 09:00:
 
 ```json
 {
-  "task": "linkedin-ideas",
+  "task": "eye-drops-morning",
+  "secret": "EL_MISMO_TASK_SECRET"
+}
+```
+
+Metro 18:30:
+
+```json
+{
+  "task": "1830-metro",
+  "secret": "EL_MISMO_TASK_SECRET"
+}
+```
+
+Gotas 21:00:
+
+```json
+{
+  "task": "eye-drops-night",
   "secret": "EL_MISMO_TASK_SECRET"
 }
 ```
 
 ## Webhook Meta
 
-Cuando API Gateway te entregue una URL pública, usa:
+Webhook:
 
 ```text
-https://TU_API_ID.execute-api.REGION.amazonaws.com/webhook
+https://TU_FUNCTION_URL/webhook
 ```
 
 Verify token:

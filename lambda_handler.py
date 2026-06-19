@@ -3,9 +3,10 @@ import asyncio
 from mangum import Mangum
 
 from app.config import settings
+from app.daily_messages import build_0800_briefing, build_eye_drops_reminder
 from app.linkedin import build_linkedin_ideas
 from app.main import app
-from app.metro import build_morning_report
+from app.metro import build_metro_service_report, build_morning_report
 from app.whatsapp import send_text_message
 
 
@@ -29,6 +30,22 @@ async def handle_task(task: str, event: dict) -> dict[str, str]:
 
     if task == "linkedin-ideas":
         await send_text_message(settings.personal_whatsapp_to, build_linkedin_ideas())
+        return {"status": "sent", "task": task}
+
+    if task == "0800-briefing":
+        await send_text_message(settings.personal_whatsapp_to, await build_0800_briefing())
+        return {"status": "sent", "task": task}
+
+    if task == "eye-drops-morning":
+        await send_text_message(settings.personal_whatsapp_to, build_eye_drops_reminder("morning"))
+        return {"status": "sent", "task": task}
+
+    if task == "1830-metro":
+        await send_text_message(settings.personal_whatsapp_to, await build_metro_service_report())
+        return {"status": "sent", "task": task}
+
+    if task == "eye-drops-night":
+        await send_text_message(settings.personal_whatsapp_to, build_eye_drops_reminder("night"))
         return {"status": "sent", "task": task}
 
     return {"status": "unknown-task", "task": task}

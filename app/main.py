@@ -2,8 +2,9 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
 
 from app.config import settings
+from app.daily_messages import build_0800_briefing, build_eye_drops_reminder
 from app.linkedin import build_authorization_url, build_linkedin_ideas, exchange_authorization_code
-from app.metro import build_morning_report
+from app.metro import build_metro_service_report, build_morning_report
 from app.personal_bot import answer_message
 from app.scheduler import start_scheduler
 from app.whatsapp import send_text_message
@@ -82,6 +83,38 @@ async def send_linkedin_ideas(request: Request) -> dict[str, str]:
     verify_task_secret(payload.get("secret"))
     await send_text_message(settings.personal_whatsapp_to, build_linkedin_ideas())
     return {"status": "sent", "task": "linkedin-ideas"}
+
+
+@app.post("/tasks/0800-briefing")
+async def send_0800_briefing(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    await send_text_message(settings.personal_whatsapp_to, await build_0800_briefing())
+    return {"status": "sent", "task": "0800-briefing"}
+
+
+@app.post("/tasks/eye-drops-morning")
+async def send_eye_drops_morning(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    await send_text_message(settings.personal_whatsapp_to, build_eye_drops_reminder("morning"))
+    return {"status": "sent", "task": "eye-drops-morning"}
+
+
+@app.post("/tasks/1830-metro")
+async def send_1830_metro(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    await send_text_message(settings.personal_whatsapp_to, await build_metro_service_report())
+    return {"status": "sent", "task": "1830-metro"}
+
+
+@app.post("/tasks/eye-drops-night")
+async def send_eye_drops_night(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    await send_text_message(settings.personal_whatsapp_to, build_eye_drops_reminder("night"))
+    return {"status": "sent", "task": "eye-drops-night"}
 
 
 @app.get("/webhook")

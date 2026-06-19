@@ -105,3 +105,41 @@ async def build_morning_report() -> str:
         "Si vas en auto, revisa Waze/Google Maps antes de salir porque aun no tengo una API de trafico conectada.\n\n"
         "Fuente Metro: https://www.metro.cl/el-viaje/estado-red"
     )
+
+
+async def build_metro_service_report() -> str:
+    now = datetime.now(ZoneInfo(settings.timezone)).strftime("%H:%M")
+    try:
+        lines = await fetch_metro_status()
+    except Exception:
+        return (
+            f"Estado Metro {now}:\n"
+            "No pude consultar metro.cl en este momento.\n\n"
+            "Fuente: https://www.metro.cl/el-viaje/estado-red"
+        )
+
+    if not lines:
+        return (
+            f"Estado Metro {now}:\n"
+            "No pude leer el detalle de lineas desde metro.cl.\n\n"
+            "Fuente: https://www.metro.cl/el-viaje/estado-red"
+        )
+
+    problem_lines = [
+        item for item in lines
+        if "disponible" not in item["status"].lower() or item["details"]
+    ]
+
+    if problem_lines:
+        metro_summary = "\n".join(
+            f"- {item['line']}: {item['status']}. {item['details']}".strip()
+            for item in problem_lines
+        )
+    else:
+        metro_summary = "Metro aparece con sus lineas disponibles segun metro.cl."
+
+    return (
+        f"Estado Metro {now}:\n"
+        f"{metro_summary}\n\n"
+        "Fuente: https://www.metro.cl/el-viaje/estado-red"
+    )

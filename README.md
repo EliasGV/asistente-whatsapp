@@ -75,15 +75,21 @@ messages
 
 ## Programacion Diaria
 
-El codigo incluye scheduler para enviar mensajes a:
+El codigo incluye tareas para enviar mensajes programados:
 
-- `MORNING_REPORT_TIME`, por defecto `08:00`
-- `LINKEDIN_IDEAS_TIME`, por defecto `12:00`
+- `0800-briefing`: clima en Providencia y La Cisterna, restriccion vehicular y Metro.
+- `eye-drops-morning`: recordatorio de gotas a las 09:00.
+- `1830-metro`: estado de Metro a las 18:30.
+- `eye-drops-night`: recordatorio de gotas a las 21:00.
+- `linkedin-ideas`: propuesta de publicacion LinkedIn.
 
-Para activarlo:
+En AWS Lambda conviene ejecutarlas con EventBridge Scheduler, invocando `lambda_handler.handler` con un evento como este:
 
-```text
-ENABLE_SCHEDULER=true
+```json
+{
+  "task": "0800-briefing",
+  "secret": "EL_MISMO_TASK_SECRET"
+}
 ```
 
 Importante: WhatsApp Cloud API puede exigir plantillas aprobadas por Meta para mensajes iniciados por el bot fuera de la ventana de conversacion. Si el envio programado falla por politica de WhatsApp, hay que crear templates aprobados o mantener la interaccion dentro de la ventana permitida.
