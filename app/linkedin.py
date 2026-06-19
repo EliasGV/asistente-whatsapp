@@ -10,23 +10,23 @@ from app.text_tools import build_custom_post
 TOPICS = [
     {
         "title": "Datos municipales para decidir mejor",
-        "angle": "Como las preguntas, reclamos y tramites repetidos pueden orientar prioridades reales de gestion local.",
+        "angle": "Cómo las preguntas, reclamos y trámites repetidos pueden orientar prioridades reales de gestión local.",
     },
     {
         "title": "IA aplicada al municipalismo",
-        "angle": "Usar IA para ordenar informacion, anticipar necesidades y mejorar la experiencia ciudadana sin perder criterio publico.",
+        "angle": "Usar IA para ordenar información, anticipar necesidades y mejorar la experiencia ciudadana sin perder criterio público.",
     },
     {
-        "title": "Municipalismo de cercania con evidencia",
-        "angle": "La cercania municipal se vuelve mas potente cuando se combina con datos simples, oportunos y accionables.",
+        "title": "Municipalismo de cercanía con evidencia",
+        "angle": "La cercanía municipal se vuelve más potente cuando se combina con datos simples, oportunos y accionables.",
     },
     {
-        "title": "Digitalizacion con trato humano",
+        "title": "Digitalización con trato humano",
         "angle": "Automatizar lo repetitivo para liberar tiempo, explicar mejor y derivar con responsabilidad.",
     },
     {
-        "title": "Transparencia util",
-        "angle": "Pasar de publicar informacion a hacerla encontrable, comprensible y usable por vecinos y equipos municipales.",
+        "title": "Transparencia útil",
+        "angle": "Pasar de publicar información a hacerla encontrable, comprensible y usable por vecinos y equipos municipales.",
     },
 ]
 
@@ -43,9 +43,9 @@ def build_linkedin_ideas(offset: int = 0) -> str:
     )
 
     return (
-        "Mediodia: te dejo una propuesta de publicacion sobre datos, IA y municipalismo.\n\n"
+        "Mediodía: te dejo una propuesta de publicación sobre datos, IA y municipalismo.\n\n"
         f"{draft}\n\n"
-        "Si te gusta, respondeme: aprobar. Si quieres otra linea, respondeme: otra idea."
+        "Si te gusta, respóndeme: aprobar. Si quieres otra línea, respóndeme: otra idea."
     )
 
 
@@ -56,47 +56,47 @@ def build_linkedin_post(topic: str = "") -> str:
 def _build_topic_draft(title: str) -> str:
     drafts = {
         "Datos municipales para decidir mejor": (
-            "Cada consulta repetida en un municipio es mas que una molestia administrativa: es una senal.\n\n"
-            "Si muchas personas preguntan lo mismo, quizas el tramite no esta bien explicado. Si un reclamo se concentra "
-            "en cierto sector, puede anticipar una prioridad territorial. Si un canal se satura, hay una oportunidad de redisenar.\n\n"
-            "Los datos municipales no siempre nacen en grandes tableros. Muchas veces aparecen en la atencion diaria, "
-            "en el meson, en WhatsApp, en formularios y en conversaciones con vecinos.\n\n"
-            "La pregunta no es solo cuantos datos tenemos, sino que decisiones estamos tomando con ellos."
+            "Cada consulta repetida en un municipio es más que una molestia administrativa: es una señal.\n\n"
+            "Si muchas personas preguntan lo mismo, quizás el trámite no está bien explicado. Si un reclamo se concentra "
+            "en cierto sector, puede anticipar una prioridad territorial. Si un canal se satura, hay una oportunidad de rediseñar.\n\n"
+            "Los datos municipales no siempre nacen en grandes tableros. Muchas veces aparecen en la atención diaria, "
+            "en el mesón, en WhatsApp, en formularios y en conversaciones con vecinos.\n\n"
+            "La pregunta no es solo cuántos datos tenemos, sino qué decisiones estamos tomando con ellos."
         ),
         "IA aplicada al municipalismo": (
-            "La IA puede ser muy util en gobiernos locales si parte por problemas concretos.\n\n"
+            "La IA puede ser muy útil en gobiernos locales si parte por problemas concretos.\n\n"
             "Responder preguntas frecuentes, ordenar solicitudes, detectar patrones en reclamos o ayudar a escribir mejor "
-            "informacion publica son usos simples, pero con impacto real en la experiencia ciudadana.\n\n"
-            "El desafio no es reemplazar criterio municipal. Es liberar tiempo, reducir friccion y hacer que los equipos "
-            "puedan concentrarse en casos que requieren contexto, empatia y decision.\n\n"
-            "La mejor IA publica no es la mas vistosa: es la que vuelve mas claro y oportuno el servicio."
+            "información pública son usos simples, pero con impacto real en la experiencia ciudadana.\n\n"
+            "El desafío no es reemplazar criterio municipal. Es liberar tiempo, reducir fricción y hacer que los equipos "
+            "puedan concentrarse en casos que requieren contexto, empatía y decisión.\n\n"
+            "La mejor IA pública no es la más vistosa: es la que vuelve más claro y oportuno el servicio."
         ),
-        "Municipalismo de cercania con evidencia": (
-            "El municipalismo tiene una ventaja que ningun otro nivel del Estado posee con tanta intensidad: cercania cotidiana.\n\n"
-            "Esa cercania permite ver problemas cuando todavia son senales pequenas: una calle insegura, un tramite confuso, "
+        "Municipalismo de cercanía con evidencia": (
+            "El municipalismo tiene una ventaja que ningún otro nivel del Estado posee con tanta intensidad: cercanía cotidiana.\n\n"
+            "Esa cercanía permite ver problemas cuando todavía son señales pequeñas: una calle insegura, un trámite confuso, "
             "un servicio que llega tarde, una pregunta que se repite semana a semana.\n\n"
-            "Pero la cercania gana fuerza cuando se combina con evidencia. Escuchar mejor, medir lo necesario y actuar sobre "
-            "patrones permite que la gestion local sea menos reactiva y mas estrategica.\n\n"
-            "Estar cerca importa. Aprender de lo que esa cercania muestra, importa todavia mas."
+            "Pero la cercanía gana fuerza cuando se combina con evidencia. Escuchar mejor, medir lo necesario y actuar sobre "
+            "patrones permite que la gestión local sea menos reactiva y más estratégica.\n\n"
+            "Estar cerca importa. Aprender de lo que esa cercanía muestra importa todavía más."
         ),
-        "Digitalizacion con trato humano": (
-            "Digitalizar un municipio no deberia significar alejarlo de las personas.\n\n"
-            "Un buen canal digital explica, orienta y reduce pasos innecesarios. Tambien reconoce cuando una persona necesita "
-            "hablar con alguien, derivar bien o recibir una respuesta mas cuidadosa.\n\n"
-            "La tecnologia sirve cuando baja la friccion: menos filas para lo simple, mejor informacion para decidir, "
-            "y mas tiempo humano para los casos complejos.\n\n"
-            "Digitalizar con sentido publico no es esconder el municipio detras de una pantalla. Es hacerlo mas accesible."
+        "Digitalización con trato humano": (
+            "Digitalizar un municipio no debería significar alejarlo de las personas.\n\n"
+            "Un buen canal digital explica, orienta y reduce pasos innecesarios. También reconoce cuando una persona necesita "
+            "hablar con alguien, derivar bien o recibir una respuesta más cuidadosa.\n\n"
+            "La tecnología sirve cuando baja la fricción: menos filas para lo simple, mejor información para decidir, "
+            "y más tiempo humano para los casos complejos.\n\n"
+            "Digitalizar con sentido público no es esconder el municipio detrás de una pantalla. Es hacerlo más accesible."
         ),
-        "Transparencia util": (
-            "La transparencia no termina cuando la informacion se publica.\n\n"
-            "Para que sea realmente util, la informacion debe poder encontrarse, entenderse y usarse. Un PDF perdido, "
-            "un dato sin contexto o una pagina dificil de navegar cumplen formalmente, pero ayudan poco.\n\n"
-            "Los municipios tienen una oportunidad enorme: transformar informacion publica en herramientas simples para vecinos, "
+        "Transparencia útil": (
+            "La transparencia no termina cuando la información se publica.\n\n"
+            "Para que sea realmente útil, la información debe poder encontrarse, entenderse y usarse. Un PDF perdido, "
+            "un dato sin contexto o una página difícil de navegar cumplen formalmente, pero ayudan poco.\n\n"
+            "Los municipios tienen una oportunidad enorme: transformar información pública en herramientas simples para vecinos, "
             "organizaciones y equipos internos.\n\n"
-            "La transparencia mas valiosa no es la que solo exhibe datos. Es la que permite tomar mejores decisiones."
+            "La transparencia más valiosa no es la que solo exhibe datos. Es la que permite tomar mejores decisiones."
         ),
     }
-    return drafts[title] + "\n\nPregunta para abrir conversacion: que experiencia municipal concreta deberiamos mejorar con datos e IA?"
+    return drafts[title] + "\n\nPregunta para abrir conversación: ¿qué experiencia municipal concreta deberíamos mejorar con datos e IA?"
 
 
 _runtime_access_token = ""

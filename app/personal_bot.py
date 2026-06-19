@@ -68,28 +68,28 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if normalized in {"mas tecnico", "más técnico", "mas tecnica", "más técnica"}:
         draft = build_post_variant(_last_linkedin_drafts.get(from_number, ""), "tecnico")
         _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
+        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
 
     if normalized in {"mas politico", "más político", "mas politica", "más política"}:
         draft = build_post_variant(_last_linkedin_drafts.get(from_number, ""), "politico")
         _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
+        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
 
     if normalized in {"mas breve", "más breve"}:
         draft = build_post_variant(_last_linkedin_drafts.get(from_number, ""), "breve")
         _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
+        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
 
     if normalized in {"con datos", "mas datos", "más datos"}:
         draft = build_post_variant(_last_linkedin_drafts.get(from_number, ""), "datos")
         _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
+        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
 
     if normalized.startswith("post"):
         draft = build_linkedin_post(text[4:].strip(" :-"))
         if from_number:
             _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
+        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
 
     if normalized.startswith("noticias") or normalized in {"news", "actualidad"}:
         return await build_news_digest()
@@ -111,7 +111,7 @@ async def answer_message(text: str, from_number: str = "") -> str:
             marker = "Borrador:\n"
             body = draft.split(marker, 1)[1].split("\n\nSi te gusta", 1)[0].strip() if marker in draft else draft
             _last_linkedin_drafts[from_number] = body
-        return draft.replace("respondeme: aprobar", "respondeme: publicar")
+        return draft.replace("respóndeme: aprobar", "respóndeme: publicar")
 
     if normalized in {"publicar", "aprobar", "aprobado", "ok publicar", "me gusta"}:
         draft = _last_linkedin_drafts.get(from_number)
