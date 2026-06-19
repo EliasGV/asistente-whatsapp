@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse
 
 from app.config import settings
-from app.linkedin import build_linkedin_ideas
+from app.linkedin import build_authorization_url, build_linkedin_ideas, exchange_authorization_code
 from app.metro import build_morning_report
 from app.personal_bot import answer_message
 from app.scheduler import start_scheduler
@@ -20,6 +20,47 @@ async def startup() -> None:
 @app.get("/")
 def health_check() -> dict[str, str]:
     return {"status": "ok", "app": settings.app_name}
+
+
+def linkedin_redirect_uri(request: Request) -> str:
+    return settings.linkedin_redirect_uri or str(request.url_for("linkedin_callback"))
+
+
+@app.get("/linkedin/login")
+def linkedin_login(request: Request) -> RedirectResponse:
+    try:
+        return RedirectResponse(build_authorization_url(linkedin_redirect_uri(request)))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/linkedin/callback", name="linkedin_callback")
+async def linkedin_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    error_description: str | None = None,
+) -> PlainTextResponse:
+    if error:
+        return PlainTextResponse(f"LinkedIn no autorizo la conexion: {error} {error_description or ''}", status_code=400)
+    if not code:
+        return PlainTextResponse("Falta el parametro code de LinkedIn.", status_code=400)
+
+    try:
+        result = await exchange_authorization_code(code, state, linkedin_redirect_uri(request))
+    except Exception as exc:
+        return PlainTextResponse(f"No pude conectar LinkedIn: {exc}", status_code=400)
+
+    return PlainTextResponse(
+        "LinkedIn conectado.\n\n"
+        "Ahora el bot puede publicar mientras esta instancia de Lambda siga caliente.\n"
+        "Para dejarlo permanente, guarda estas variables en Lambda:\n\n"
+        f"LINKEDIN_ACCESS_TOKEN={result['access_token']}\n"
+        f"LINKEDIN_PERSON_URN={result['person_urn']}\n"
+        f"Expira en segundos: {result['expires_in']}\n\n"
+        "Despues escribe en WhatsApp: post datos municipales y luego publicar."
+    )
 
 
 def verify_task_secret(secret: str | None) -> None:
@@ -67,7 +108,7 @@ async def receive_message(request: Request) -> dict[str, str]:
 
                 from_number = message["from"]
                 text = message["text"]["body"]
-                answer = await answer_message(text)
+                answer = await answer_message(text, from_number)
                 try:
                     await send_text_message(from_number, answer)
                 except Exception as exc:

@@ -10,8 +10,8 @@ Bot personal conectado a WhatsApp Cloud API.
 - `noticias`: titulares recientes sobre municipalismo, municipios y gestion local.
 - `linkedin`: propuesta diaria de publicacion sobre municipalismo.
 - `post <tema>`: borrador LinkedIn sobre el tema que indiques.
+- `publicar`: publica en LinkedIn el ultimo borrador revisado.
 - `minuta <texto>`: convierte texto largo en minuta ejecutiva.
-- `aprobar`: confirma que una idea queda aprobada para que la publiques manualmente.
 - `ayuda`: muestra comandos disponibles.
 
 ## Configuracion
@@ -32,6 +32,12 @@ VEHICLE_ONE_YEAR=2010
 VEHICLE_ONE_DIGIT=2
 VEHICLE_TWO_YEAR=2019
 VEHICLE_TWO_DIGIT=8
+LINKEDIN_CLIENT_ID=
+LINKEDIN_CLIENT_SECRET=
+LINKEDIN_REDIRECT_URI=https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-east-1.on.aws/linkedin/callback
+LINKEDIN_STATE_SECRET=
+LINKEDIN_ACCESS_TOKEN=
+LINKEDIN_PERSON_URN=
 APP_NAME=Asistente Personal WhatsApp
 ```
 
@@ -93,3 +99,22 @@ La regla configurada cubre el calendario normal de invierno para vehiculos con s
 - viernes: 6 y 7
 
 Horario normal: 07:30 a 21:00, de mayo a agosto. En episodios ambientales la autoridad puede ampliar restricciones, por lo que esa parte requiere una fuente oficial adicional.
+
+## Publicar en LinkedIn
+
+1. En LinkedIn Developer Portal, agrega el producto `Share on LinkedIn`.
+2. En `Auth`, deja esta URL autorizada:
+
+```text
+https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-east-1.on.aws/linkedin/callback
+```
+
+3. Guarda `LINKEDIN_CLIENT_ID`, `LINKEDIN_CLIENT_SECRET`, `LINKEDIN_REDIRECT_URI` y `LINKEDIN_STATE_SECRET` en variables de entorno de Lambda.
+4. Despliega el codigo y abre:
+
+```text
+https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-east-1.on.aws/linkedin/login
+```
+
+5. Al volver desde LinkedIn, el callback mostrara `LINKEDIN_ACCESS_TOKEN` y `LINKEDIN_PERSON_URN`. Copialos a las variables de entorno de Lambda para que la conexion quede estable.
+6. En WhatsApp escribe `post <tema>` y, si te gusta el texto, responde `publicar`.

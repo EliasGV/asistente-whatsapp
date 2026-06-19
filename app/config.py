@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     vehicle_one_digit: str = "2"
     vehicle_two_year: int = 2019
     vehicle_two_digit: str = "8"
+    linkedin_client_id: str = ""
+    linkedin_client_secret: str = ""
+    linkedin_redirect_uri: str = ""
+    linkedin_state_secret: str = "linkedin-2450"
+    linkedin_access_token: str = ""
+    linkedin_person_urn: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
