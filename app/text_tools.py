@@ -43,6 +43,46 @@ def build_custom_post(topic: str = "") -> str:
     )
 
 
+def build_post_variant(text: str, style: str) -> str:
+    text = _clean(text)
+    if not text:
+        return "Todavia no tengo un borrador para ajustar. Escribeme primero: post <tema>."
+
+    if style == "breve":
+        return (
+            "Borrador LinkedIn breve:\n\n"
+            f"{text[:450].rstrip()}...\n\n"
+            "Pregunta: que dato municipal mirarias primero?"
+        )
+    if style == "tecnico":
+        return (
+            "Borrador LinkedIn mas tecnico:\n\n"
+            "La gestion local puede mejorar cuando convierte datos operacionales en decisiones. "
+            "Consultas frecuentes, tiempos de respuesta, reclamos por territorio y fricciones de tramite "
+            "permiten priorizar intervenciones, medir brechas y evaluar resultados.\n\n"
+            f"Base del texto: {text}\n\n"
+            "La IA aporta valor si se integra con criterios de gobernanza, trazabilidad y responsabilidad publica."
+        )
+    if style == "politico":
+        return (
+            "Borrador LinkedIn mas politico:\n\n"
+            "El municipalismo no es solo administracion cercana: es capacidad de leer la vida cotidiana y responder "
+            "con soluciones concretas. Los datos y la IA pueden ayudar, pero el centro sigue siendo una decision "
+            "publica: mejorar el trato, reducir desigualdades de acceso y hacer mas simple la relacion con el Estado.\n\n"
+            f"Base del texto: {text}"
+        )
+    if style == "datos":
+        return (
+            "Borrador LinkedIn con foco en datos:\n\n"
+            "Un municipio produce datos todos los dias: volumen de consultas, tiempos de respuesta, tramites mas "
+            "preguntados, sectores con mas reclamos y canales con mayor demanda. El punto no es acumularlos, sino "
+            "convertirlos en decisiones observables.\n\n"
+            f"Base del texto: {text}\n\n"
+            "Dato mata intuicion cuando se usa con contexto y responsabilidad."
+        )
+    return text
+
+
 def build_minute(text: str) -> str:
     text = _clean(text)
     if not text:

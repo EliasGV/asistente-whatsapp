@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     linkedin_state_secret: str = "linkedin-2450"
     linkedin_access_token: str = ""
     linkedin_person_urn: str = ""
+    google_client_id: str = ""
+    google_client_secret: str = ""
+    google_redirect_uri: str = ""
+    google_state_secret: str = "gmail-2450"
+    gmail_access_token: str = ""
+    gmail_refresh_token: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

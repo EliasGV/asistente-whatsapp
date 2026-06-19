@@ -3,7 +3,7 @@ import asyncio
 from mangum import Mangum
 
 from app.config import settings
-from app.daily_messages import build_0800_briefing, build_eye_drops_reminder
+from app.daily_messages import build_0800_briefing, build_daily_planning, build_email_digest, build_eye_drops_reminder
 from app.linkedin import build_linkedin_ideas
 from app.main import app
 from app.metro import build_metro_service_report, build_morning_report
@@ -46,6 +46,14 @@ async def handle_task(task: str, event: dict) -> dict[str, str]:
 
     if task == "eye-drops-night":
         await send_text_message(settings.personal_whatsapp_to, build_eye_drops_reminder("night"))
+        return {"status": "sent", "task": task}
+
+    if task == "email-summary":
+        await send_text_message(settings.personal_whatsapp_to, await build_email_digest())
+        return {"status": "sent", "task": task}
+
+    if task == "daily-planning":
+        await send_text_message(settings.personal_whatsapp_to, await build_daily_planning())
         return {"status": "sent", "task": task}
 
     return {"status": "unknown-task", "task": task}

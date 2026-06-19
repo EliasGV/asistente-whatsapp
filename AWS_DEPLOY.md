@@ -31,6 +31,12 @@ LINKEDIN_REDIRECT_URI=https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-eas
 LINKEDIN_STATE_SECRET=
 LINKEDIN_ACCESS_TOKEN=
 LINKEDIN_PERSON_URN=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-east-1.on.aws/gmail/callback
+GOOGLE_STATE_SECRET=
+GMAIL_ACCESS_TOKEN=
+GMAIL_REFRESH_TOKEN=
 APP_NAME=Asistente Personal WhatsApp
 ```
 

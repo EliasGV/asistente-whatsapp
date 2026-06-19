@@ -5,11 +5,22 @@ Bot personal conectado a WhatsApp Cloud API.
 ## Comandos
 
 - `metro`: reporte de movilidad con estado de lineas desde `https://www.metro.cl/el-viaje/estado-red`.
+- `salir`: modo traslado con Metro, restriccion y recomendaciones.
 - `restriccion`: revisa tus dos autos con sello verde y avisa si tienen restriccion normal.
 - `restriccion manana`: revisa la restriccion para el dia siguiente.
+- `correo`: resumen de correos recientes relevantes.
+- `pendientes`: posibles correos que requieren accion.
+- `agenda`: agenda manual guardada en la conversacion.
+- `agenda <texto>`: agrega un punto a la agenda manual.
+- `checklist`: checklist laboral rapido.
+- `nota <texto>`: agrega una nota a tu bitacora.
+- `bitacora`: muestra notas recientes.
+- `gotas`: muestra confirmaciones de gotas registradas.
+- `si gotas` / `no gotas`: registra el estado de las gotas.
 - `noticias`: titulares recientes sobre municipalismo, municipios y gestion local.
 - `linkedin`: propuesta diaria de publicacion sobre municipalismo.
 - `post <tema>`: borrador LinkedIn sobre el tema que indiques.
+- `mas tecnico`, `mas politico`, `mas breve`, `con datos`: ajusta el ultimo borrador.
 - `publicar`: publica en LinkedIn el ultimo borrador revisado.
 - `minuta <texto>`: convierte texto largo en minuta ejecutiva.
 - `ayuda`: muestra comandos disponibles.
@@ -38,6 +49,12 @@ LINKEDIN_REDIRECT_URI=https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-eas
 LINKEDIN_STATE_SECRET=
 LINKEDIN_ACCESS_TOKEN=
 LINKEDIN_PERSON_URN=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
+GOOGLE_REDIRECT_URI=https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-east-1.on.aws/gmail/callback
+GOOGLE_STATE_SECRET=
+GMAIL_ACCESS_TOKEN=
+GMAIL_REFRESH_TOKEN=
 APP_NAME=Asistente Personal WhatsApp
 ```
 
@@ -124,3 +141,24 @@ https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-east-1.on.aws/linkedin/lo
 
 5. Al volver desde LinkedIn, el callback mostrara `LINKEDIN_ACCESS_TOKEN` y `LINKEDIN_PERSON_URN`. Copialos a las variables de entorno de Lambda para que la conexion quede estable.
 6. En WhatsApp escribe `post <tema>` y, si te gusta el texto, responde `publicar`.
+
+## Gmail Solo Lectura
+
+1. En Google Cloud Console crea un OAuth Client ID tipo Web application.
+2. Agrega esta redirect URI autorizada:
+
+```text
+https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-east-1.on.aws/gmail/callback
+```
+
+3. Guarda `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` y `GOOGLE_STATE_SECRET` en Lambda.
+4. Abre:
+
+```text
+https://i4p7wvgqyivpri7ysmcjcwweoe0uoekj.lambda-url.us-east-1.on.aws/gmail/login
+```
+
+5. Al volver desde Google, copia `GMAIL_REFRESH_TOKEN` a Lambda.
+6. En WhatsApp escribe `correo` o `pendientes`.
+
+Nota: la bitacora, agenda manual y confirmaciones quedan en memoria en esta primera version. Para hacerlas persistentes entre reinicios de Lambda, usar DynamoDB.

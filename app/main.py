@@ -2,7 +2,8 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
 
 from app.config import settings
-from app.daily_messages import build_0800_briefing, build_eye_drops_reminder
+from app.daily_messages import build_0800_briefing, build_daily_planning, build_email_digest, build_eye_drops_reminder
+from app.gmail_client import build_gmail_authorization_url, exchange_gmail_authorization_code
 from app.linkedin import build_authorization_url, build_linkedin_ideas, exchange_authorization_code
 from app.metro import build_metro_service_report, build_morning_report
 from app.personal_bot import answer_message
@@ -25,6 +26,10 @@ def health_check() -> dict[str, str]:
 
 def linkedin_redirect_uri(request: Request) -> str:
     return settings.linkedin_redirect_uri or str(request.url_for("linkedin_callback"))
+
+
+def gmail_redirect_uri(request: Request) -> str:
+    return settings.google_redirect_uri or str(request.url_for("gmail_callback"))
 
 
 @app.get("/linkedin/login")
@@ -61,6 +66,43 @@ async def linkedin_callback(
         f"LINKEDIN_PERSON_URN={result['person_urn']}\n"
         f"Expira en segundos: {result['expires_in']}\n\n"
         "Despues escribe en WhatsApp: post datos municipales y luego publicar."
+    )
+
+
+@app.get("/gmail/login")
+def gmail_login(request: Request) -> RedirectResponse:
+    try:
+        return RedirectResponse(build_gmail_authorization_url(gmail_redirect_uri(request)))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.get("/gmail/callback", name="gmail_callback")
+async def gmail_callback(
+    request: Request,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    error_description: str | None = None,
+) -> PlainTextResponse:
+    if error:
+        return PlainTextResponse(f"Google no autorizo Gmail: {error} {error_description or ''}", status_code=400)
+    if not code:
+        return PlainTextResponse("Falta el parametro code de Google.", status_code=400)
+
+    try:
+        result = await exchange_gmail_authorization_code(code, state, gmail_redirect_uri(request))
+    except Exception as exc:
+        return PlainTextResponse(f"No pude conectar Gmail: {exc}", status_code=400)
+
+    return PlainTextResponse(
+        "Gmail conectado en modo solo lectura.\n\n"
+        "Para dejarlo permanente, guarda estas variables en Lambda:\n\n"
+        f"GMAIL_REFRESH_TOKEN={result['refresh_token']}\n"
+        f"GMAIL_ACCESS_TOKEN={result['access_token']}\n"
+        f"Expira en segundos: {result['expires_in']}\n"
+        f"Scopes: {result['scope']}\n\n"
+        "Despues escribe en WhatsApp: correo o pendientes."
     )
 
 
@@ -115,6 +157,22 @@ async def send_eye_drops_night(request: Request) -> dict[str, str]:
     verify_task_secret(payload.get("secret"))
     await send_text_message(settings.personal_whatsapp_to, build_eye_drops_reminder("night"))
     return {"status": "sent", "task": "eye-drops-night"}
+
+
+@app.post("/tasks/email-summary")
+async def send_email_summary(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    await send_text_message(settings.personal_whatsapp_to, await build_email_digest())
+    return {"status": "sent", "task": "email-summary"}
+
+
+@app.post("/tasks/daily-planning")
+async def send_daily_planning(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    await send_text_message(settings.personal_whatsapp_to, await build_daily_planning())
+    return {"status": "sent", "task": "daily-planning"}
 
 
 @app.get("/webhook")
