@@ -349,3 +349,57 @@ async def build_pending_email_summary() -> str:
         return f"No pude leer Gmail todavia. Conecta la cuenta en /gmail/login. Detalle tecnico: {exc}"
     ranked = [message for message in _rank_messages(messages) if _score_message(message) > 0]
     return _format_messages("Pendientes Gmail: correos priorizados por accion", ranked or messages, limit=6)
+
+
+async def build_meeting_brief(topic: str) -> str:
+    topic = (topic or "").strip()
+    if not topic:
+        return "Escríbeme el tema después de `reunion`. Ejemplo: reunion presupuesto salud."
+    query = f'newer_than:30d -in:spam -in:trash "{topic}"'
+    try:
+        messages = await _fetch_messages(query, 10)
+    except Exception as exc:
+        return f"No pude preparar la reunión desde Gmail. Detalle técnico: {exc}"
+    if not messages:
+        return f"No encontré correos recientes sobre: {topic}."
+
+    ranked = _rank_messages(messages)[:5]
+    lines = [f"Modo reunión: {topic}", "", "Contexto desde Gmail:"]
+    for message in ranked:
+        lines.append(f"- {message['subject']} ({_sender_name(message['from'])}): {_short_summary(message)}")
+    lines.append(
+        "\nPreguntas sugeridas:\n"
+        "- ¿Cuál es la decisión que debe salir de esta reunión?\n"
+        "- ¿Qué antecedentes faltan?\n"
+        "- ¿Quién queda responsable y con qué plazo?\n"
+        "- ¿Qué riesgo conviene dejar explicitado?"
+    )
+    lines.append("\nDespués puedes escribirme: minuta <notas de la reunión>.")
+    return "\n".join(lines)
+
+
+async def build_reply_draft(topic: str) -> str:
+    topic = (topic or "").strip()
+    if not topic:
+        return "Escríbeme el tema después de `responder correo`. Ejemplo: responder correo presupuesto salud."
+    query = f'newer_than:30d -in:spam -in:trash "{topic}"'
+    try:
+        messages = await _fetch_messages(query, 5)
+    except Exception as exc:
+        return f"No pude buscar el correo para preparar respuesta. Detalle técnico: {exc}"
+    if not messages:
+        return f"No encontré correos recientes sobre: {topic}."
+
+    message = _rank_messages(messages)[0]
+    sender = _sender_name(message["from"])
+    summary = _short_summary(message)
+    return (
+        f"Borrador de respuesta para: {message['subject']}\n"
+        f"De: {sender}\n\n"
+        "Estimado/a,\n\n"
+        "Junto con saludar, gracias por el envío de los antecedentes.\n\n"
+        f"Según lo revisado, entiendo que el punto principal es: {summary}\n\n"
+        "Voy a revisar la información y coordinar los antecedentes necesarios para dar respuesta o derivar según corresponda. "
+        "En caso de requerir algún insumo adicional, lo informaré oportunamente.\n\n"
+        "Saludos cordiales."
+    )

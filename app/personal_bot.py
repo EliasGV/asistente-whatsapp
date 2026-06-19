@@ -1,5 +1,5 @@
 from app.faq import find_answer
-from app.gmail_client import build_email_summary, build_pending_email_summary
+from app.gmail_client import build_email_summary, build_meeting_brief, build_pending_email_summary, build_reply_draft
 from app.linkedin import build_linkedin_ideas, build_linkedin_post, publish_text_post
 from app.metro import build_morning_report
 from app.news import build_news_digest
@@ -14,6 +14,7 @@ from app.productivity import (
     build_reminders,
     build_therapy_summary,
     build_work_checklist,
+    mark_commitment_done,
     record_eye_drops,
 )
 from app.text_tools import build_minute, build_post_variant
@@ -29,8 +30,44 @@ def _extract_post_body(draft: str) -> str:
     return draft.replace("Borrador LinkedIn:\n\n", "", 1).strip()
 
 
+def build_extended_help() -> str:
+    return (
+        "Ayuda ampliada:\n\n"
+        "Movilidad:\n"
+        "- metro / salir: clima, restricción vehicular y estado de Metro.\n"
+        "- restriccion / restriccion mañana: revisa tus autos configurados.\n\n"
+        "Correo y trabajo:\n"
+        "- correo: resumen ejecutivo del inbox reciente.\n"
+        "- pendientes: correos priorizados por acción.\n"
+        "- reunion <tema>: prepara contexto de reunión con correos relacionados.\n"
+        "- responder correo <tema>: arma un borrador de respuesta sin enviarlo.\n"
+        "- minuta <texto>: transforma notas en minuta ejecutiva.\n\n"
+        "Memoria y recordatorios:\n"
+        "- nota <texto>: guarda bitácora persistente.\n"
+        "- bitacora: muestra notas recientes.\n"
+        "- agenda <texto>: guarda un punto de agenda manual.\n"
+        "- recordar <texto + fecha/hora>: crea recordatorio real si EventBridge está configurado.\n"
+        "- recordatorios: lista recordatorios guardados.\n"
+        "- cumplido <palabra clave>: marca un pendiente como cumplido.\n\n"
+        "Salud y terapia:\n"
+        "- si gotas / no gotas: registra gotas.\n"
+        "- gotas: muestra registro.\n"
+        "- recuerdo <texto>: guarda algo para terapia.\n"
+        "- audios: revisa transcripciones listas y las guarda como recuerdos.\n"
+        "- terapia: prepara resumen previo a sesión psicológica.\n\n"
+        "LinkedIn:\n"
+        "- linkedin / otra idea: genera ideas.\n"
+        "- post <tema>: crea borrador.\n"
+        "- mas tecnico / mas politico / mas breve / con datos: ajusta estilo.\n"
+        "- publicar: publica el último borrador aprobado."
+    )
+
+
 async def answer_message(text: str, from_number: str = "") -> str:
     normalized = text.lower().strip()
+
+    if normalized in {"ayuda mas", "ayuda más", "mas ayuda", "más ayuda"}:
+        return build_extended_help()
 
     if normalized.startswith("minuta"):
         return build_minute(text[6:].strip(" :-"))
@@ -59,6 +96,9 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if normalized.startswith("recordar"):
         return add_reminder(from_number, text[8:].strip(" :-"))
 
+    if normalized.startswith("cumplido"):
+        return mark_commitment_done(from_number, text[8:].strip(" :-"))
+
     if normalized in {"recordatorios", "pendientes manuales"}:
         return build_reminders(from_number)
 
@@ -70,6 +110,13 @@ async def answer_message(text: str, from_number: str = "") -> str:
 
     if normalized in {"pendientes", "correos pendientes", "pendientes correo"}:
         return await build_pending_email_summary()
+
+    if normalized.startswith("reunion") or normalized.startswith("reunión"):
+        topic = text.split(maxsplit=1)[1] if len(text.split(maxsplit=1)) > 1 else ""
+        return await build_meeting_brief(topic)
+
+    if normalized.startswith("responder correo"):
+        return await build_reply_draft(text[len("responder correo"):].strip(" :-"))
 
     if "gotas" in normalized and any(word in normalized for word in ["si", "sí", "no", "puestas", "puse"]):
         return record_eye_drops(from_number, text)

@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     transcribe_language_code: str = "es-US"
     transcribe_output_prefix: str = "transcripts/"
     transcribe_audio_prefix: str = "audio/"
+    memory_table_name: str = ""
+    reminder_scheduler_role_arn: str = ""
+    reminder_lambda_arn: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

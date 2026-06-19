@@ -56,4 +56,10 @@ async def handle_task(task: str, event: dict) -> dict[str, str]:
         await send_text_message(settings.personal_whatsapp_to, await build_daily_planning())
         return {"status": "sent", "task": task}
 
+    if task == "send-reminder":
+        to = event.get("to") or settings.personal_whatsapp_to
+        text = event.get("text", "")
+        await send_text_message(to, f"Recordatorio: {text}")
+        return {"status": "sent", "task": task}
+
     return {"status": "unknown-task", "task": task}
