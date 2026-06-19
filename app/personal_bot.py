@@ -7,6 +7,7 @@ from app.vehicle_restriction import build_vehicle_restriction_report
 
 
 _last_linkedin_drafts: dict[str, str] = {}
+_linkedin_idea_offsets: dict[str, int] = {}
 
 
 def _extract_post_body(draft: str) -> str:
@@ -35,7 +36,12 @@ async def answer_message(text: str, from_number: str = "") -> str:
         return await build_morning_report()
 
     if any(word in normalized for word in ["linkedin", "publicacion", "municipalismo", "otra idea"]):
-        draft = build_linkedin_ideas()
+        if "otra idea" in normalized and from_number:
+            _linkedin_idea_offsets[from_number] = _linkedin_idea_offsets.get(from_number, 0) + 1
+        elif from_number:
+            _linkedin_idea_offsets[from_number] = 0
+
+        draft = build_linkedin_ideas(_linkedin_idea_offsets.get(from_number, 0))
         if from_number:
             marker = "Borrador:\n"
             body = draft.split(marker, 1)[1].split("\n\nSi te gusta", 1)[0].strip() if marker in draft else draft
