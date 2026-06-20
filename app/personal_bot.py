@@ -1,5 +1,6 @@
 from app.faq import find_answer
 from app.gmail_client import build_email_summary, build_meeting_brief, build_pending_email_summary, build_reply_draft
+from app.daily_messages import build_daily_mode, build_municipal_radar, build_nightly_summary
 from app.linkedin import build_linkedin_ideas, build_linkedin_post, publish_text_post
 from app.metro import build_morning_report
 from app.news import build_news_digest
@@ -14,9 +15,12 @@ from app.productivity import (
     build_reminders,
     build_therapy_summary,
     build_work_checklist,
+    delete_memory,
     mark_commitment_done,
     record_eye_drops,
+    search_memory,
 )
+from app.reminders import cancel_reminder, reschedule_reminder
 from app.text_tools import build_minute, build_post_variant
 from app.transcribe_audio import collect_finished_audio_memories
 from app.vehicle_restriction import build_vehicle_restriction_report
@@ -51,6 +55,8 @@ def build_extended_help() -> str:
         "- recordar cada lunes <texto> 08:30: crea un recordatorio semanal.\n"
         "- recordar lunes a viernes <texto> 08:15: crea un recordatorio de dias laborales.\n"
         "- recordatorios: lista recordatorios guardados.\n"
+        "- cancelar <palabra clave>: cancela recordatorios.\n"
+        "- cambiar recordatorio <clave> a mañana 12:00: cambia fecha/hora.\n"
         "- cumplido <palabra clave>: marca un pendiente como cumplido.\n\n"
         "Salud y terapia:\n"
         "- si / no / si gotas / no gotas: registra si te pusiste las gotas.\n"
@@ -90,6 +96,15 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if normalized in {"terapia", "resumen terapia", "memoria terapia"}:
         return build_therapy_summary(from_number)
 
+    if normalized in {"diario", "modo diario"}:
+        return await build_daily_mode(from_number)
+
+    if normalized in {"cierre", "cierre dia", "cierre día", "resumen noche", "resumen nocturno"}:
+        return await build_nightly_summary(from_number)
+
+    if normalized in {"radar municipal", "radar", "radar municipios"}:
+        return await build_municipal_radar()
+
     if normalized in {"audios", "audio", "transcripciones", "revisar audios"}:
         return await collect_finished_audio_memories(from_number)
 
@@ -105,11 +120,28 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if normalized.startswith("recordar"):
         return add_reminder(from_number, text[8:].strip(" :-"))
 
+    if normalized.startswith("cancelar"):
+        return cancel_reminder(from_number, text[8:].strip(" :-"))
+
+    if normalized.startswith("cambiar recordatorio"):
+        return reschedule_reminder(from_number, text[len("cambiar recordatorio"):].strip(" :-"))
+
     if normalized.startswith("cumplido"):
         return mark_commitment_done(from_number, text[8:].strip(" :-"))
 
     if normalized in {"recordatorios", "pendientes manuales"}:
         return build_reminders(from_number)
+
+    if normalized.startswith("buscar memoria") or normalized.startswith("que dije sobre") or normalized.startswith("qué dije sobre"):
+        query = (
+            text[len("buscar memoria"):].strip(" :-")
+            if normalized.startswith("buscar memoria")
+            else text.split("sobre", 1)[1].strip(" :-") if "sobre" in normalized else ""
+        )
+        return search_memory(from_number, query)
+
+    if normalized.startswith("borrar memoria"):
+        return delete_memory(from_number, text[len("borrar memoria"):].strip(" :-"))
 
     if normalized in {"checklist", "checklist laboral"}:
         return build_work_checklist()

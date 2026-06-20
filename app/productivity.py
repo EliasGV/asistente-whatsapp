@@ -1,4 +1,4 @@
-from app.memory_store import list_items, mark_done, now_label, put_item
+from app.memory_store import delete_matching_items, list_items, mark_done, now_label, put_item, search_items
 
 
 def add_note(user: str, text: str) -> str:
@@ -84,6 +84,32 @@ def mark_commitment_done(user: str, text: str) -> str:
     if mark_done(user, "reminder", text) or mark_done(user, "commitment", text):
         return "Listo, lo marqué como cumplido."
     return "No encontré un pendiente parecido. Prueba con una palabra clave del recordatorio."
+
+
+def search_memory(user: str, text: str) -> str:
+    if not text:
+        return "Escríbeme qué quieres buscar. Ejemplo: buscar memoria jurídico."
+    matches = search_items(user, text)
+    if not matches:
+        return f"No encontré recuerdos, notas o pendientes sobre: {text}."
+    lines = [f"Memoria encontrada sobre '{text}':"]
+    for item in matches:
+        lines.append(f"- {item.get('category', 'item')}: {item.get('text', '')}")
+    return "\n".join(lines)
+
+
+def delete_memory(user: str, text: str) -> str:
+    normalized = text.lower().strip()
+    if normalized in {"terapia", "memoria terapia"}:
+        count = delete_matching_items(user, "therapy")
+        return f"Borré {count} recuerdo(s) de terapia."
+    if normalized in {"todo", "toda", "todo todo"}:
+        count = delete_matching_items(user, None)
+        return f"Borré {count} elemento(s) de memoria."
+    if normalized:
+        count = delete_matching_items(user, None, normalized)
+        return f"Borré {count} elemento(s) que coincidían con: {text}."
+    return "Dime qué memoria borrar. Ejemplo: borrar memoria terapia, borrar memoria jurídico, borrar memoria todo."
 
 
 def add_therapy_memory(user: str, text: str) -> str:

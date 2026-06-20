@@ -92,7 +92,7 @@ async def start_whatsapp_audio_transcription(user: str, media_id: str, message_i
     return job_name
 
 
-async def collect_finished_audio_memories(user: str) -> str:
+async def collect_finished_audio_memories(user: str, silent: bool = False) -> str:
     if not settings.transcribe_bucket:
         return "Falta configurar TRANSCRIBE_BUCKET para usar transcripción de audios."
 
@@ -107,6 +107,8 @@ async def collect_finished_audio_memories(user: str) -> str:
 
     jobs = response.get("TranscriptionJobSummaries", [])
     if not jobs:
+        if silent:
+            return ""
         return "Todavía no encontré audios transcritos. Si acabas de mandar uno, prueba de nuevo en unos minutos con: audios."
 
     s3 = boto3.client("s3")
@@ -129,6 +131,8 @@ async def collect_finished_audio_memories(user: str) -> str:
         added.append(transcript)
 
     if not added:
+        if silent:
+            return ""
         return "Encontré trabajos completados, pero no pude agregar una transcripción nueva. Puede que ya estuvieran revisados."
 
     preview = "\n\n".join(f"- {item[:700]}" for item in added[:3])

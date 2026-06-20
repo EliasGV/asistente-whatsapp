@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from app.config import settings
-from app.memory_store import put_item
+from app.memory_store import delete_matching_items, list_items, put_item
 
 
 WEEKDAYS = {
@@ -195,3 +195,54 @@ def create_real_reminder(user: str, text: str) -> str:
         )
 
     return f"Listo. Te recordaré: {text}\nFecha: {run_at.strftime('%d-%m-%Y %H:%M')}."
+
+
+def _delete_schedule(schedule_name: str) -> None:
+    if not schedule_name:
+        return
+    boto3 = __import__("boto3")
+    scheduler = boto3.client("scheduler")
+    scheduler.delete_schedule(Name=schedule_name)
+
+
+def cancel_reminder(user: str, text: str) -> str:
+    needle = text.lower().strip()
+    if not needle:
+        return "Escríbeme qué recordatorio quieres cancelar. Ejemplo: cancelar Karina."
+
+    matches = [
+        item for item in list_items(user, "reminder", limit=50)
+        if needle in item.get("text", "").lower()
+    ]
+    if not matches:
+        return "No encontré un recordatorio parecido."
+
+    deleted_schedules = 0
+    for item in matches:
+        try:
+            _delete_schedule(item.get("schedule_name", ""))
+            deleted_schedules += 1
+        except Exception as exc:
+            print(f"Could not delete schedule: {exc}")
+
+    deleted_items = delete_matching_items(user, "reminder", text)
+    return f"Cancelé {deleted_items} recordatorio(s). Schedules eliminados: {deleted_schedules}."
+
+
+def reschedule_reminder(user: str, text: str) -> str:
+    normalized = text.strip()
+    if " a " not in normalized.lower():
+        return "Usa este formato: cambiar recordatorio <palabra clave> a mañana 12:00."
+
+    before, after = re.split(r"\s+a\s+", normalized, maxsplit=1, flags=re.I)
+    keyword = before.strip()
+    matches = [
+        item for item in list_items(user, "reminder", limit=50)
+        if keyword.lower() in item.get("text", "").lower()
+    ]
+    if not matches:
+        return "No encontré un recordatorio parecido para cambiar."
+
+    original = matches[-1]["text"]
+    cancel_reminder(user, keyword)
+    return create_real_reminder(user, f"{original} {after}")
