@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -17,6 +18,24 @@ WEEKDAYS = {
     "sábado": 5,
     "domingo": 6,
 }
+AWS_WEEKDAYS = {
+    0: "MON",
+    1: "TUE",
+    2: "WED",
+    3: "THU",
+    4: "FRI",
+    5: "SAT",
+    6: "SUN",
+}
+
+
+def _parse_time(text: str) -> tuple[int, int]:
+    match = re.search(r"\b(\d{1,2})(?::|\.|h)?(\d{2})?\b", text)
+    if not match:
+        return 9, 0
+    hour = int(match.group(1))
+    minute = int(match.group(2) or 0)
+    return max(0, min(hour, 23)), max(0, min(minute, 59))
 
 
 def _next_weekday(target: int, hour: int, minute: int) -> datetime:
@@ -27,15 +46,6 @@ def _next_weekday(target: int, hour: int, minute: int) -> datetime:
     if run_at <= now:
         run_at += timedelta(days=7)
     return run_at
-
-
-def _parse_time(text: str) -> tuple[int, int]:
-    match = re.search(r"\b(\d{1,2})(?::|\.|h)?(\d{2})?\b", text)
-    if not match:
-        return 9, 0
-    hour = int(match.group(1))
-    minute = int(match.group(2) or 0)
-    return max(0, min(hour, 23)), max(0, min(minute, 59))
 
 
 def parse_reminder_time(text: str) -> datetime:
@@ -58,18 +68,110 @@ def parse_reminder_time(text: str) -> datetime:
     return run_at
 
 
-def _schedule_name(user: str, run_at: datetime) -> str:
+def _recurrence_expression(text: str) -> tuple[str, str] | None:
+    normalized = text.lower()
+    hour, minute = _parse_time(normalized)
+
+    if any(phrase in normalized for phrase in ["todos los dias", "todos los días", "cada dia", "cada día", "diario", "diariamente"]):
+        return f"cron({minute} {hour} * * ? *)", f"todos los días a las {hour:02d}:{minute:02d}"
+
+    if "lunes a viernes" in normalized or "de lunes a viernes" in normalized:
+        return f"cron({minute} {hour} ? * MON-FRI *)", f"lunes a viernes a las {hour:02d}:{minute:02d}"
+
+    for name, weekday in WEEKDAYS.items():
+        if f"cada {name}" in normalized or f"todos los {name}" in normalized:
+            aws_day = AWS_WEEKDAYS[weekday]
+            return f"cron({minute} {hour} ? * {aws_day} *)", f"cada {name} a las {hour:02d}:{minute:02d}"
+
+    return None
+
+
+def _schedule_name(user: str, stamp: str) -> str:
     safe_user = re.sub(r"[^A-Za-z0-9]", "", user)[-12:] or "user"
-    stamp = run_at.strftime("%Y%m%d%H%M%S")
     return f"asistente-recordatorio-{safe_user}-{stamp}"
+
+
+def _create_schedule(name: str, expression: str, user: str, text: str, memory_sk: str, recurring: bool) -> None:
+    boto3 = __import__("boto3")
+    scheduler = boto3.client("scheduler")
+    kwargs = {
+        "Name": name,
+        "ScheduleExpression": expression,
+        "ScheduleExpressionTimezone": settings.timezone,
+        "FlexibleTimeWindow": {"Mode": "OFF"},
+        "Target": {
+            "Arn": settings.reminder_lambda_arn,
+            "RoleArn": settings.reminder_scheduler_role_arn,
+            "Input": json.dumps(
+                {
+                    "task": "send-reminder",
+                    "secret": settings.task_secret,
+                    "to": user,
+                    "text": text,
+                    "memory_sk": memory_sk,
+                    "recurring": recurring,
+                }
+            ),
+        },
+    }
+    if not recurring:
+        kwargs["ActionAfterCompletion"] = "DELETE"
+    scheduler.create_schedule(**kwargs)
 
 
 def create_real_reminder(user: str, text: str) -> str:
     if not text:
-        return "Escríbeme el recordatorio después de `recordar`. Ejemplo: recordar llamar a Karina mañana 10:30."
+        return (
+            "Escribeme el recordatorio despues de `recordar`.\n"
+            "Ejemplos:\n"
+            "- recordar llamar a Karina mañana 10:30\n"
+            "- recordar todos los dias gotas 21:00\n"
+            "- recordar cada lunes revisar planificación 08:30"
+        )
+
+    recurrence = _recurrence_expression(text)
+    if recurrence:
+        expression, label = recurrence
+        stamp = datetime.now(ZoneInfo(settings.timezone)).strftime("%Y%m%d%H%M%S")
+        schedule_name = _schedule_name(user, stamp)
+        item = put_item(
+            user,
+            "reminder",
+            text,
+            {
+                "schedule_name": schedule_name,
+                "schedule_expression": expression,
+                "recurrence": label,
+                "status": "scheduled",
+            },
+        )
+        if not settings.reminder_scheduler_role_arn or not settings.reminder_lambda_arn:
+            return (
+                f"Recordatorio recurrente guardado ({label}). "
+                "Para que avise solo falta configurar REMINDER_SCHEDULER_ROLE_ARN y REMINDER_LAMBDA_ARN."
+            )
+        try:
+            _create_schedule(schedule_name, expression, user, text, item["sk"], recurring=True)
+        except Exception as exc:
+            return (
+                f"Guardé el recordatorio recurrente ({label}), pero no pude crear la alarma en EventBridge. "
+                f"Detalle técnico: {exc}"
+            )
+        return f"Listo. Te recordaré {label}: {text}"
 
     run_at = parse_reminder_time(text)
-    item = put_item(user, "reminder", text, {"run_at": run_at.isoformat(), "status": "scheduled"})
+    stamp = run_at.strftime("%Y%m%d%H%M%S")
+    schedule_name = _schedule_name(user, stamp)
+    item = put_item(
+        user,
+        "reminder",
+        text,
+        {
+            "run_at": run_at.isoformat(),
+            "schedule_name": schedule_name,
+            "status": "scheduled",
+        },
+    )
 
     if not settings.reminder_scheduler_role_arn or not settings.reminder_lambda_arn:
         return (
@@ -77,26 +179,19 @@ def create_real_reminder(user: str, text: str) -> str:
             "Para que avise solo falta configurar REMINDER_SCHEDULER_ROLE_ARN y REMINDER_LAMBDA_ARN."
         )
 
-    boto3 = __import__("boto3")
-    scheduler = boto3.client("scheduler")
-    schedule_expression = f"at({run_at.strftime('%Y-%m-%dT%H:%M:%S')})"
-    payload = {
-        "task": "send-reminder",
-        "secret": settings.task_secret,
-        "to": user,
-        "text": text,
-        "memory_sk": item["sk"],
-    }
-    scheduler.create_schedule(
-        Name=_schedule_name(user, run_at),
-        ScheduleExpression=schedule_expression,
-        ScheduleExpressionTimezone=settings.timezone,
-        FlexibleTimeWindow={"Mode": "OFF"},
-        Target={
-            "Arn": settings.reminder_lambda_arn,
-            "RoleArn": settings.reminder_scheduler_role_arn,
-            "Input": __import__("json").dumps(payload),
-        },
-        ActionAfterCompletion="DELETE",
-    )
+    try:
+        _create_schedule(
+            schedule_name,
+            f"at({run_at.strftime('%Y-%m-%dT%H:%M:%S')})",
+            user,
+            text,
+            item["sk"],
+            recurring=False,
+        )
+    except Exception as exc:
+        return (
+            f"Guardé el recordatorio para {run_at.strftime('%d-%m %H:%M')}, "
+            f"pero no pude crear la alarma en EventBridge. Detalle técnico: {exc}"
+        )
+
     return f"Listo. Te recordaré: {text}\nFecha: {run_at.strftime('%d-%m-%Y %H:%M')}."

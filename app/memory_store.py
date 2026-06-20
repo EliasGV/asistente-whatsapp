@@ -36,7 +36,11 @@ def put_item(user: str, category: str, text: str, extra: dict[str, str] | None =
 
     table = _table()
     if table:
-        table.put_item(Item=item)
+        try:
+            table.put_item(Item=item)
+        except Exception as exc:
+            print(f"DynamoDB put_item failed, using local fallback: {exc}")
+            _local_items.setdefault(user, []).append(item)
     else:
         _local_items.setdefault(user, []).append(item)
     return item
@@ -45,16 +49,19 @@ def put_item(user: str, category: str, text: str, extra: dict[str, str] | None =
 def list_items(user: str, category: str, limit: int = 20) -> list[dict[str, str]]:
     table = _table()
     if table:
-        response = table.query(
-            KeyConditionExpression="pk = :pk AND begins_with(sk, :prefix)",
-            ExpressionAttributeValues={
-                ":pk": f"USER#{user}",
-                ":prefix": f"{category.upper()}#",
-            },
-            ScanIndexForward=False,
-            Limit=limit,
-        )
-        return list(reversed(response.get("Items", [])))
+        try:
+            response = table.query(
+                KeyConditionExpression="pk = :pk AND begins_with(sk, :prefix)",
+                ExpressionAttributeValues={
+                    ":pk": f"USER#{user}",
+                    ":prefix": f"{category.upper()}#",
+                },
+                ScanIndexForward=False,
+                Limit=limit,
+            )
+            return list(reversed(response.get("Items", [])))
+        except Exception as exc:
+            print(f"DynamoDB query failed, using local fallback: {exc}")
 
     items = [
         item for item in _local_items.get(user, [])
@@ -75,6 +82,9 @@ def mark_done(user: str, category: str, text_contains: str) -> bool:
             item["status"] = "done"
             item["done_at"] = now_iso()
             if table:
-                table.put_item(Item=item)
+                try:
+                    table.put_item(Item=item)
+                except Exception as exc:
+                    print(f"DynamoDB mark_done failed: {exc}")
             return True
     return False

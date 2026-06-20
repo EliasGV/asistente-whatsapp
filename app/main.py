@@ -219,7 +219,14 @@ async def receive_message(request: Request) -> dict[str, str]:
                     continue
 
                 text = message["text"]["body"]
-                answer = await answer_message(text, from_number)
+                try:
+                    answer = await answer_message(text, from_number)
+                except Exception as exc:
+                    print(f"Error building answer: {exc}")
+                    answer = (
+                        "Tuve un problema procesando ese comando. "
+                        f"Detalle técnico: {exc}"
+                    )
                 try:
                     await send_text_message(from_number, answer)
                 except Exception as exc:

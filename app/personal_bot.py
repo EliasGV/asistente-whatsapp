@@ -34,37 +34,46 @@ def build_extended_help() -> str:
     return (
         "Ayuda ampliada:\n\n"
         "Movilidad:\n"
-        "- metro / salir: clima, restricción vehicular y estado de Metro.\n"
-        "- restriccion / restriccion mañana: revisa tus autos configurados.\n\n"
+        "- metro / salir: clima, restriccion vehicular y estado de Metro.\n"
+        "- restriccion / restriccion manana: revisa tus autos configurados.\n\n"
         "Correo y trabajo:\n"
         "- correo: resumen ejecutivo del inbox reciente.\n"
-        "- pendientes: correos priorizados por acción.\n"
-        "- reunion <tema>: prepara contexto de reunión con correos relacionados.\n"
+        "- pendientes: correos priorizados por accion.\n"
+        "- reunion <tema>: prepara contexto de reunion con correos relacionados.\n"
         "- responder correo <tema>: arma un borrador de respuesta sin enviarlo.\n"
         "- minuta <texto>: transforma notas en minuta ejecutiva.\n\n"
         "Memoria y recordatorios:\n"
-        "- nota <texto>: guarda bitácora persistente.\n"
+        "- nota <texto>: guarda bitacora persistente.\n"
         "- bitacora: muestra notas recientes.\n"
         "- agenda <texto>: guarda un punto de agenda manual.\n"
-        "- recordar <texto + fecha/hora>: crea recordatorio real si EventBridge está configurado.\n"
+        "- recordar <texto + fecha/hora>: crea un recordatorio real si EventBridge esta configurado.\n"
+        "- recordar todos los dias <texto> 21:00: crea un recordatorio recurrente diario.\n"
+        "- recordar cada lunes <texto> 08:30: crea un recordatorio semanal.\n"
+        "- recordar lunes a viernes <texto> 08:15: crea un recordatorio de dias laborales.\n"
         "- recordatorios: lista recordatorios guardados.\n"
         "- cumplido <palabra clave>: marca un pendiente como cumplido.\n\n"
         "Salud y terapia:\n"
-        "- si gotas / no gotas: registra gotas.\n"
+        "- si / no / si gotas / no gotas: registra si te pusiste las gotas.\n"
         "- gotas: muestra registro.\n"
         "- recuerdo <texto>: guarda algo para terapia.\n"
         "- audios: revisa transcripciones listas y las guarda como recuerdos.\n"
-        "- terapia: prepara resumen previo a sesión psicológica.\n\n"
+        "- terapia: prepara resumen previo a sesion psicologica.\n\n"
         "LinkedIn:\n"
         "- linkedin / otra idea: genera ideas.\n"
         "- post <tema>: crea borrador.\n"
         "- mas tecnico / mas politico / mas breve / con datos: ajusta estilo.\n"
-        "- publicar: publica el último borrador aprobado."
+        "- publicar: publica el ultimo borrador aprobado."
     )
 
 
 async def answer_message(text: str, from_number: str = "") -> str:
     normalized = text.lower().strip()
+
+    if normalized in {"si", "sí", "sip", "sipo", "si me las puse", "sí me las puse"}:
+        return record_eye_drops(from_number, "si gotas")
+
+    if normalized in {"no", "nop", "no me las puse"}:
+        return record_eye_drops(from_number, "no gotas")
 
     if normalized in {"ayuda mas", "ayuda más", "mas ayuda", "más ayuda"}:
         return build_extended_help()
@@ -112,8 +121,8 @@ async def answer_message(text: str, from_number: str = "") -> str:
         return await build_pending_email_summary()
 
     if normalized.startswith("reunion") or normalized.startswith("reunión"):
-        topic = text.split(maxsplit=1)[1] if len(text.split(maxsplit=1)) > 1 else ""
-        return await build_meeting_brief(topic)
+        parts = text.split(maxsplit=1)
+        return await build_meeting_brief(parts[1] if len(parts) > 1 else "")
 
     if normalized.startswith("responder correo"):
         return await build_reply_draft(text[len("responder correo"):].strip(" :-"))
@@ -127,28 +136,28 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if normalized in {"mas tecnico", "más técnico", "mas tecnica", "más técnica"}:
         draft = build_post_variant(_last_linkedin_drafts.get(from_number, ""), "tecnico")
         _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
+        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
 
     if normalized in {"mas politico", "más político", "mas politica", "más política"}:
         draft = build_post_variant(_last_linkedin_drafts.get(from_number, ""), "politico")
         _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
+        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
 
     if normalized in {"mas breve", "más breve"}:
         draft = build_post_variant(_last_linkedin_drafts.get(from_number, ""), "breve")
         _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
+        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
 
     if normalized in {"con datos", "mas datos", "más datos"}:
         draft = build_post_variant(_last_linkedin_drafts.get(from_number, ""), "datos")
         _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
+        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
 
     if normalized.startswith("post"):
         draft = build_linkedin_post(text[4:].strip(" :-"))
         if from_number:
             _last_linkedin_drafts[from_number] = _extract_post_body(draft)
-        return f"{draft}\n\nSi esta versión te gusta, respóndeme: publicar"
+        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
 
     if normalized.startswith("noticias") or normalized in {"news", "actualidad"}:
         return await build_news_digest()
@@ -156,10 +165,10 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if any(word in normalized for word in ["restriccion", "restricción", "sello verde", "patente"]):
         return build_vehicle_restriction_report(text)
 
-    if any(word in normalized for word in ["metro", "trafico", "movilidad", "viaje", "salir", "traslado"]):
+    if any(word in normalized for word in ["metro", "trafico", "tráfico", "movilidad", "viaje", "salir", "traslado"]):
         return await build_morning_report()
 
-    if any(word in normalized for word in ["linkedin", "publicacion", "municipalismo", "otra idea"]):
+    if any(word in normalized for word in ["linkedin", "publicacion", "publicación", "municipalismo", "otra idea"]):
         if "otra idea" in normalized and from_number:
             _linkedin_idea_offsets[from_number] = _linkedin_idea_offsets.get(from_number, 0) + 1
         elif from_number:
