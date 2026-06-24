@@ -56,11 +56,11 @@ def build_extended_help() -> str:
         "- recordar lunes a viernes <texto> 08:15: crea un recordatorio de dias laborales.\n"
         "- recordatorios: lista recordatorios guardados.\n"
         "- cancelar <palabra clave>: cancela recordatorios.\n"
-        "- cambiar recordatorio <clave> a mañana 12:00: cambia fecha/hora.\n"
+        "- cambiar recordatorio <clave> a manana 12:00: cambia fecha/hora.\n"
         "- cumplido <palabra clave>: marca un pendiente como cumplido.\n\n"
         "Salud y terapia:\n"
         "- si / no / si gotas / no gotas: registra si te pusiste las gotas.\n"
-        "- gotas: muestra registro.\n"
+        "- gotas / mis gotas / gotas hoy: muestra registro.\n"
         "- recuerdo <texto>: guarda algo para terapia.\n"
         "- audios: revisa transcripciones listas y las guarda como recuerdos.\n"
         "- terapia: prepara resumen previo a sesion psicologica.\n\n"
@@ -72,13 +72,46 @@ def build_extended_help() -> str:
     )
 
 
+def _looks_like_eye_drops_confirmation(normalized: str) -> bool:
+    return normalized in {
+        "si",
+        "sí",
+        "sip",
+        "sipo",
+        "listo",
+        "hecho",
+        "ok",
+        "ya",
+        "puestas",
+        "me las puse",
+        "si me las puse",
+        "sí me las puse",
+        "gotas listas",
+        "ya me puse las gotas",
+    }
+
+
+def _looks_like_eye_drops_negative(normalized: str) -> bool:
+    return normalized in {
+        "no",
+        "nop",
+        "no aun",
+        "no aún",
+        "pendiente",
+        "aun no",
+        "aún no",
+        "no me las puse",
+        "no gotas",
+    }
+
+
 async def answer_message(text: str, from_number: str = "") -> str:
     normalized = text.lower().strip()
 
-    if normalized in {"si", "sí", "sip", "sipo", "si me las puse", "sí me las puse"}:
+    if _looks_like_eye_drops_confirmation(normalized):
         return record_eye_drops(from_number, "si gotas")
 
-    if normalized in {"no", "nop", "no me las puse"}:
+    if _looks_like_eye_drops_negative(normalized):
         return record_eye_drops(from_number, "no gotas")
 
     if normalized in {"ayuda mas", "ayuda más", "mas ayuda", "más ayuda"}:
@@ -159,10 +192,10 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if normalized.startswith("responder correo"):
         return await build_reply_draft(text[len("responder correo"):].strip(" :-"))
 
-    if "gotas" in normalized and any(word in normalized for word in ["si", "sí", "no", "puestas", "puse"]):
+    if "gotas" in normalized and any(word in normalized for word in ["si", "sí", "no", "puestas", "puse", "listo", "hecho"]):
         return record_eye_drops(from_number, text)
 
-    if normalized in {"gotas", "estado gotas"}:
+    if normalized in {"gotas", "estado gotas", "registro gotas", "mis gotas", "gotas hoy", "ver gotas"}:
         return build_eye_drops_status(from_number)
 
     if normalized in {"mas tecnico", "más técnico", "mas tecnica", "más técnica"}:
