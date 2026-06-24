@@ -30,6 +30,20 @@ _last_linkedin_drafts: dict[str, str] = {}
 _linkedin_idea_offsets: dict[str, int] = {}
 
 
+def build_short_help() -> str:
+    return (
+        "Soy tu asistente personal. Puedes escribirme:\n"
+        "- diario, cierre o radar municipal\n"
+        "- metro o salir\n"
+        "- gotas, si, no o pendiente\n"
+        "- correo, pendientes, reunion <tema>\n"
+        "- recordar <texto + hora>, recordatorios o cancelar <texto>\n"
+        "- terapia, recuerdo <texto> o audios\n"
+        "- linkedin, post <tema> o publicar\n\n"
+        "Para ver detalle escribe: ayuda mas."
+    )
+
+
 def _extract_post_body(draft: str) -> str:
     return draft.replace("Borrador LinkedIn:\n\n", "", 1).strip()
 
@@ -113,6 +127,9 @@ async def answer_message(text: str, from_number: str = "") -> str:
 
     if _looks_like_eye_drops_negative(normalized):
         return record_eye_drops(from_number, "no gotas")
+
+    if normalized in {"ayuda", "menu", "menú", "comandos", "hola"}:
+        return build_short_help()
 
     if normalized in {"ayuda mas", "ayuda más", "mas ayuda", "más ayuda"}:
         return build_extended_help()

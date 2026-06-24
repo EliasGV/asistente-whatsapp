@@ -28,4 +28,9 @@ async def send_text_message(to: str, body: str) -> None:
 
     async with httpx.AsyncClient(timeout=20) as client:
         response = await client.post(url, headers=headers, json=payload)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise RuntimeError(
+                f"WhatsApp API error {response.status_code}: {response.text[:1000]}"
+            ) from exc

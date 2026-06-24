@@ -187,9 +187,15 @@ def verify_webhook(
     raise HTTPException(status_code=403, detail="Webhook verification failed")
 
 
+@app.get("/debug/answer")
+async def debug_answer(text: str = "ayuda", from_number: str = "debug") -> dict[str, str]:
+    return {"text": text, "answer": await answer_message(text, from_number)}
+
+
 @app.post("/webhook")
 async def receive_message(request: Request) -> dict[str, str]:
     payload = await request.json()
+    print(f"Webhook payload keys: {list(payload.keys())}")
 
     for entry in payload.get("entry", []):
         for change in entry.get("changes", []):
@@ -219,6 +225,7 @@ async def receive_message(request: Request) -> dict[str, str]:
                     continue
 
                 text = message["text"]["body"]
+                print(f"Incoming text from {from_number}: {text}")
                 try:
                     answer = await answer_message(text, from_number)
                 except Exception as exc:
