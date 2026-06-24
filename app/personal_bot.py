@@ -12,6 +12,8 @@ from app.productivity import (
     build_agenda,
     build_daily_notes,
     build_eye_drops_status,
+    build_eye_drops_weekly_summary,
+    add_mood_entry,
     build_reminders,
     build_therapy_summary,
     build_work_checklist,
@@ -35,7 +37,7 @@ def build_short_help() -> str:
         "Soy tu asistente personal. Puedes escribirme:\n"
         "- diario, cierre o radar municipal\n"
         "- metro o salir\n"
-        "- gotas, si, no o pendiente\n"
+        "- gotas, resumen gotas, si, no o pendiente\n"
         "- correo, pendientes, reunion <tema>\n"
         "- recordar <texto + hora>, recordatorios o cancelar <texto>\n"
         "- terapia, recuerdo <texto> o audios\n"
@@ -75,6 +77,8 @@ def build_extended_help() -> str:
         "Salud y terapia:\n"
         "- si / no / si gotas / no gotas: registra si te pusiste las gotas.\n"
         "- gotas / mis gotas / gotas hoy: muestra registro.\n"
+        "- resumen gotas: muestra cumplimiento de los ultimos 7 dias.\n"
+        "- animo 3 cansado: registra animo del dia para el cierre diario.\n"
         "- recuerdo <texto>: guarda algo para terapia.\n"
         "- audios: revisa transcripciones listas y las guarda como recuerdos.\n"
         "- terapia: prepara resumen previo a sesion psicologica.\n\n"
@@ -146,6 +150,9 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if normalized in {"terapia", "resumen terapia", "memoria terapia"}:
         return build_therapy_summary(from_number)
 
+    if normalized.startswith("animo") or normalized.startswith("ánimo"):
+        return add_mood_entry(from_number, text)
+
     if normalized in {"diario", "modo diario"}:
         return await build_daily_mode(from_number)
 
@@ -212,6 +219,9 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if "gotas" in normalized and any(word in normalized for word in ["si", "sí", "no", "puestas", "puse", "listo", "hecho"]):
         return record_eye_drops(from_number, text)
 
+    if normalized in {"resumen gotas", "reporte gotas", "semana gotas", "gotas semana"}:
+        return build_eye_drops_weekly_summary(from_number)
+
     if normalized in {"gotas", "estado gotas", "registro gotas", "mis gotas", "gotas hoy", "ver gotas"}:
         return build_eye_drops_status(from_number)
 
@@ -233,6 +243,14 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if normalized in {"con datos", "mas datos", "más datos"}:
         draft = build_post_variant(_last_linkedin_drafts.get(from_number, ""), "datos")
         _last_linkedin_drafts[from_number] = _extract_post_body(draft)
+        return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
+
+    if normalized in {"post radar municipal", "post radar", "publicacion radar", "publicación radar"}:
+        draft = build_linkedin_post(
+            "Radar municipal: una lectura breve sobre datos, gestion local, inteligencia artificial y servicios municipales"
+        )
+        if from_number:
+            _last_linkedin_drafts[from_number] = _extract_post_body(draft)
         return f"{draft}\n\nSi esta version te gusta, respondeme: publicar"
 
     if normalized.startswith("post"):

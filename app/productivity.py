@@ -1,4 +1,45 @@
+import re
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+from app.config import settings
 from app.memory_store import delete_matching_items, list_items, mark_done, now_label, put_item, search_items
+
+
+def _now() -> datetime:
+    return datetime.now(ZoneInfo(settings.timezone))
+
+
+def _parse_created_at(item: dict[str, str]) -> datetime | None:
+    try:
+        return datetime.fromisoformat(item["created_at"])
+    except Exception:
+        return None
+
+
+def _current_eye_drops_period() -> str:
+    return "morning" if _now().hour < 15 else "night"
+
+
+def _period_label(period: str) -> str:
+    return "manana" if period == "morning" else "noche"
+
+
+def _today_eye_drops_records(user: str, period: str | None = None) -> list[dict[str, str]]:
+    today = _now().date()
+    records = []
+    for item in list_items(user, "eye_drops", limit=80):
+        created_at = _parse_created_at(item)
+        if not created_at or created_at.date() != today:
+            continue
+        if period and item.get("period") != period:
+            continue
+        records.append(item)
+    return records
+
+
+def _has_confirmed_eye_drops(user: str, period: str) -> bool:
+    return any(item.get("status") == "confirmado" for item in _today_eye_drops_records(user, period))
 
 
 def add_note(user: str, text: str) -> str:
@@ -35,13 +76,16 @@ def build_agenda(user: str) -> str:
 
 def record_eye_drops(user: str, text: str) -> str:
     normalized = text.lower()
+    period = "night" if any(word in normalized for word in ["noche", "21", "nocturn"]) else _current_eye_drops_period()
+    if any(word in normalized for word in ["manana", "mañana", "09", "matinal"]):
+        period = "morning"
     if "no" in normalized or "pendiente" in normalized:
         status = "pendiente"
         answer = "Ok, queda pendiente. Te conviene ponertelas apenas puedas."
     else:
         status = "confirmado"
         answer = "Perfecto, dejo registradas las gotas como puestas."
-    put_item(user, "eye_drops", status, {"label": now_label(), "status": status})
+    put_item(user, "eye_drops", status, {"label": now_label(), "status": status, "period": period})
     return answer
 
 
@@ -62,10 +106,83 @@ def build_eye_drops_status(user: str) -> str:
         "Ultimos registros:",
     ]
     lines.extend(
-        f"- {item.get('label', item['created_at'])} - {item.get('status', item.get('text', 'registrado'))}"
+        f"- {item.get('label', item['created_at'])} - {_period_label(item.get('period', ''))}: {item.get('status', item.get('text', 'registrado'))}"
         for item in records
     )
     return "\n".join(lines)
+
+
+def build_eye_drops_weekly_summary(user: str) -> str:
+    records = list_items(user, "eye_drops", limit=120)
+    if not records:
+        return (
+            "Resumen gotas semanal:\n"
+            "Todavia no tengo registros persistentes de gotas."
+        )
+
+    start_date = _now().date() - timedelta(days=6)
+    by_day: dict[str, dict[str, str]] = {}
+    for item in records:
+        created_at = _parse_created_at(item)
+        if not created_at or created_at.date() < start_date:
+            continue
+        day_key = created_at.strftime("%d-%m")
+        period = item.get("period") or ("morning" if created_at.hour < 15 else "night")
+        by_day.setdefault(day_key, {})[period] = item.get("status", item.get("text", "registrado"))
+
+    expected_slots = 14
+    confirmed = sum(
+        1
+        for periods in by_day.values()
+        for status in periods.values()
+        if status == "confirmado"
+    )
+    percent = round((confirmed / expected_slots) * 100)
+
+    lines = [
+        "Resumen gotas semanal:",
+        f"Confirmaciones: {confirmed}/{expected_slots} ({percent}%)",
+        "",
+        "Detalle ultimos 7 dias:",
+    ]
+    for offset in range(6, -1, -1):
+        day = _now().date() - timedelta(days=offset)
+        key = day.strftime("%d-%m")
+        periods = by_day.get(key, {})
+        morning = periods.get("morning", "sin registro")
+        night = periods.get("night", "sin registro")
+        lines.append(f"- {key}: manana {morning}; noche {night}")
+    return "\n".join(lines)
+
+
+def build_eye_drops_followup(user: str, period: str) -> str:
+    if _has_confirmed_eye_drops(user, period):
+        return ""
+    label = "09:30" if period == "morning" else "21:30"
+    return (
+        f"Seguimiento {label}: no veo registrada la gota de la {_period_label(period)}.\n"
+        "Si ya te la pusiste, responde: si. Si queda pendiente, responde: pendiente."
+    )
+
+
+def add_mood_entry(user: str, text: str) -> str:
+    match = re.search(r"\b([1-5])\b", text)
+    score = match.group(1) if match else ""
+    label = f"animo {score}/5" if score else "animo registrado"
+    put_item(user, "mood", text.strip() or label, {"label": now_label(), "score": score})
+    if score:
+        return f"Anotado: animo {score}/5."
+    return "Anotado en tu registro de animo."
+
+
+def build_mood_summary(user: str) -> str:
+    items = list_items(user, "mood", limit=7)
+    if not items:
+        return "Animo: todavia no tengo registros. Puedes responder: animo 3 cansado, por ejemplo."
+    return "Animo reciente:\n" + "\n".join(
+        f"- {item.get('label', item['created_at'])}: {item.get('text', '')}"
+        for item in items
+    )
 
 
 def build_work_checklist() -> str:

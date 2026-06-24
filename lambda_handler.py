@@ -3,7 +3,15 @@ import asyncio
 from mangum import Mangum
 
 from app.config import settings
-from app.daily_messages import build_0800_briefing, build_daily_planning, build_email_digest, build_eye_drops_reminder, build_municipal_radar, build_nightly_summary
+from app.daily_messages import (
+    build_0800_briefing,
+    build_daily_planning,
+    build_email_digest,
+    build_eye_drops_followup_message,
+    build_eye_drops_reminder,
+    build_municipal_radar,
+    build_nightly_summary,
+)
 from app.linkedin import build_linkedin_ideas
 from app.main import app
 from app.metro import build_metro_service_report, build_morning_report
@@ -41,6 +49,13 @@ async def handle_task(task: str, event: dict) -> dict[str, str]:
         await send_text_message(settings.personal_whatsapp_to, build_eye_drops_reminder("morning"))
         return {"status": "sent", "task": task}
 
+    if task == "eye-drops-morning-followup":
+        message = build_eye_drops_followup_message(settings.personal_whatsapp_to, "morning")
+        if message:
+            await send_text_message(settings.personal_whatsapp_to, message)
+            return {"status": "sent", "task": task}
+        return {"status": "already-confirmed", "task": task}
+
     if task == "1830-metro":
         await send_text_message(settings.personal_whatsapp_to, await build_metro_service_report())
         return {"status": "sent", "task": task}
@@ -48,6 +63,13 @@ async def handle_task(task: str, event: dict) -> dict[str, str]:
     if task == "eye-drops-night":
         await send_text_message(settings.personal_whatsapp_to, build_eye_drops_reminder("night"))
         return {"status": "sent", "task": task}
+
+    if task == "eye-drops-night-followup":
+        message = build_eye_drops_followup_message(settings.personal_whatsapp_to, "night")
+        if message:
+            await send_text_message(settings.personal_whatsapp_to, message)
+            return {"status": "sent", "task": task}
+        return {"status": "already-confirmed", "task": task}
 
     if task == "email-summary":
         await send_text_message(settings.personal_whatsapp_to, await build_email_digest())

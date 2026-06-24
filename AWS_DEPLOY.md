@@ -75,6 +75,15 @@ Gotas 09:00:
 }
 ```
 
+Seguimiento gotas 09:30, solo avisa si no confirmaste:
+
+```json
+{
+  "task": "eye-drops-morning-followup",
+  "secret": "EL_MISMO_TASK_SECRET"
+}
+```
+
 Metro 18:30:
 
 ```json
@@ -89,6 +98,24 @@ Gotas 21:00:
 ```json
 {
   "task": "eye-drops-night",
+  "secret": "EL_MISMO_TASK_SECRET"
+}
+```
+
+Cierre diario 21:30:
+
+```json
+{
+  "task": "nightly-summary",
+  "secret": "EL_MISMO_TASK_SECRET"
+}
+```
+
+Seguimiento gotas noche 21:45, solo avisa si no confirmaste:
+
+```json
+{
+  "task": "eye-drops-night-followup",
   "secret": "EL_MISMO_TASK_SECRET"
 }
 ```

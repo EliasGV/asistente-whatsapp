@@ -16,6 +16,13 @@ def _clean_text(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
+def _clean_title(title: str, source_name: str = "") -> str:
+    title = _clean_text(title)
+    if source_name and title.endswith(f" - {source_name}"):
+        title = title[: -(len(source_name) + 3)].strip()
+    return title
+
+
 async def fetch_municipal_news(limit: int = 5) -> list[dict[str, str]]:
     url = GOOGLE_NEWS_RSS.format(query=quote_plus(NEWS_QUERY))
     headers = {"User-Agent": "Mozilla/5.0"}
@@ -27,10 +34,11 @@ async def fetch_municipal_news(limit: int = 5) -> list[dict[str, str]]:
     root = ET.fromstring(response.text)
     items = []
     for item in root.findall(".//item")[:limit]:
-        title = _clean_text(item.findtext("title"))
+        raw_title = _clean_text(item.findtext("title"))
         link = _clean_text(item.findtext("link"))
         source = item.find("{http://www.w3.org/2005/Atom}source")
         source_name = _clean_text(source.text if source is not None else "")
+        title = _clean_title(raw_title, source_name)
         items.append({"title": title, "link": link, "source": source_name})
     return items
 
@@ -47,13 +55,13 @@ async def build_news_digest() -> str:
     if not items:
         return "No encontre noticias recientes sobre municipalismo en la fuente configurada."
 
-    lines = ["Noticias para mirar con ojo municipal:"]
+    lines = ["Radar municipal: titulares para mirar con criterio local"]
     for index, item in enumerate(items, start=1):
-        source = f" ({item['source']})" if item["source"] else ""
-        lines.append(f"{index}. {item['title']}{source}\n{item['link']}")
+        source = f" - {item['source']}" if item["source"] else ""
+        lines.append(f"{index}. {item['title']}{source}")
 
     lines.append(
-        "\nLectura sugerida: revisa si alguna noticia abre una idea sobre gestion local, "
-        "servicios municipales, datos publicos o confianza ciudadana."
+        "\nLectura sugerida: elige un titular y preguntate que revela sobre servicios municipales, "
+        "datos publicos, confianza ciudadana o gestion preventiva."
     )
     return "\n\n".join(lines)

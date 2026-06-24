@@ -94,7 +94,7 @@ def search_items(user: str, text_contains: str, limit: int = 12) -> list[dict[st
     needle = text_contains.lower().strip()
     if not needle:
         return []
-    categories = ["note", "agenda", "reminder", "therapy", "eye_drops", "commitment"]
+    categories = ["note", "agenda", "reminder", "therapy", "eye_drops", "commitment", "mood"]
     matches = []
     for category in categories:
         for item in list_items(user, category, limit=50):
@@ -105,7 +105,7 @@ def search_items(user: str, text_contains: str, limit: int = 12) -> list[dict[st
 
 def delete_matching_items(user: str, category: str | None, text_contains: str = "") -> int:
     needle = text_contains.lower().strip()
-    categories = [category] if category else ["note", "agenda", "reminder", "therapy", "eye_drops", "commitment"]
+    categories = [category] if category else ["note", "agenda", "reminder", "therapy", "eye_drops", "commitment", "mood"]
     table = _table()
     deleted = 0
     for current_category in categories:

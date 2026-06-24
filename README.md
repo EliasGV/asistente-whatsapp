@@ -17,6 +17,11 @@ Bot personal conectado a WhatsApp Cloud API.
 - `bitacora`: muestra notas recientes.
 - `gotas`: muestra confirmaciones de gotas registradas.
 - `si gotas` / `no gotas`: registra el estado de las gotas.
+- `resumen gotas`: muestra cumplimiento de los ultimos 7 dias.
+- `animo 3 cansado`: registra animo para el cierre diario.
+- `cierre`: muestra cierre del dia con notas, recordatorios, gotas y animo.
+- `radar municipal`: titulares limpios e idea publicable.
+- `post radar municipal`: crea un borrador LinkedIn basado en radar municipal.
 - `noticias`: titulares recientes sobre municipalismo, municipios y gestion local.
 - `linkedin`: propuesta diaria de publicacion sobre municipalismo.
 - `post <tema>`: borrador LinkedIn sobre el tema que indiques.

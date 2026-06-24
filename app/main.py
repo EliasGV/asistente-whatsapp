@@ -2,7 +2,14 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
 
 from app.config import settings
-from app.daily_messages import build_0800_briefing, build_daily_planning, build_email_digest, build_eye_drops_reminder
+from app.daily_messages import (
+    build_0800_briefing,
+    build_daily_planning,
+    build_email_digest,
+    build_eye_drops_followup_message,
+    build_eye_drops_reminder,
+    build_nightly_summary,
+)
 from app.gmail_client import build_gmail_authorization_url, exchange_gmail_authorization_code
 from app.linkedin import build_authorization_url, build_linkedin_ideas, exchange_authorization_code
 from app.metro import build_metro_service_report, build_morning_report
@@ -144,6 +151,17 @@ async def send_eye_drops_morning(request: Request) -> dict[str, str]:
     return {"status": "sent", "task": "eye-drops-morning"}
 
 
+@app.post("/tasks/eye-drops-morning-followup")
+async def send_eye_drops_morning_followup(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    message = build_eye_drops_followup_message(settings.personal_whatsapp_to, "morning")
+    if message:
+        await send_text_message(settings.personal_whatsapp_to, message)
+        return {"status": "sent", "task": "eye-drops-morning-followup"}
+    return {"status": "already-confirmed", "task": "eye-drops-morning-followup"}
+
+
 @app.post("/tasks/1830-metro")
 async def send_1830_metro(request: Request) -> dict[str, str]:
     payload = await request.json() if await request.body() else {}
@@ -160,6 +178,17 @@ async def send_eye_drops_night(request: Request) -> dict[str, str]:
     return {"status": "sent", "task": "eye-drops-night"}
 
 
+@app.post("/tasks/eye-drops-night-followup")
+async def send_eye_drops_night_followup(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    message = build_eye_drops_followup_message(settings.personal_whatsapp_to, "night")
+    if message:
+        await send_text_message(settings.personal_whatsapp_to, message)
+        return {"status": "sent", "task": "eye-drops-night-followup"}
+    return {"status": "already-confirmed", "task": "eye-drops-night-followup"}
+
+
 @app.post("/tasks/email-summary")
 async def send_email_summary(request: Request) -> dict[str, str]:
     payload = await request.json() if await request.body() else {}
@@ -174,6 +203,14 @@ async def send_daily_planning(request: Request) -> dict[str, str]:
     verify_task_secret(payload.get("secret"))
     await send_text_message(settings.personal_whatsapp_to, await build_daily_planning())
     return {"status": "sent", "task": "daily-planning"}
+
+
+@app.post("/tasks/nightly-summary")
+async def send_nightly_summary(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    await send_text_message(settings.personal_whatsapp_to, await build_nightly_summary(settings.personal_whatsapp_to))
+    return {"status": "sent", "task": "nightly-summary"}
 
 
 @app.get("/webhook")
