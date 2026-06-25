@@ -8,7 +8,7 @@ import httpx
 from app.config import settings
 
 
-GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly"
+GOOGLE_SCOPES = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly"
 GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GMAIL_API_URL = "https://gmail.googleapis.com/gmail/v1/users/me"
@@ -58,7 +58,7 @@ def build_gmail_authorization_url(redirect_uri: str) -> str:
             "client_id": settings.google_client_id,
             "redirect_uri": redirect_uri,
             "response_type": "code",
-            "scope": GMAIL_SCOPE,
+            "scope": GOOGLE_SCOPES,
             "access_type": "offline",
             "prompt": "consent",
             "state": settings.google_state_secret,
@@ -109,6 +109,10 @@ async def _get_access_token() -> str:
         response = await client.post(GOOGLE_TOKEN_URL, data=data)
         response.raise_for_status()
         return response.json()["access_token"]
+
+
+async def get_google_access_token() -> str:
+    return await _get_access_token()
 
 
 def _clean_text(text: str) -> str:

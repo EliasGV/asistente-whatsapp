@@ -66,6 +66,23 @@ Reporte 08:00:
 }
 ```
 
+Agenda Google 07:30, lunes a viernes:
+
+Schedule:
+
+```text
+cron(30 7 ? * MON-FRI *)
+```
+
+Payload:
+
+```json
+{
+  "task": "calendar-daily-summary",
+  "secret": "EL_MISMO_TASK_SECRET"
+}
+```
+
 Gotas 09:00:
 
 ```json

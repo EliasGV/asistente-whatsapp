@@ -1,4 +1,5 @@
 from app.faq import find_answer
+from app.calendar_client import build_calendar_daily_summary
 from app.gmail_client import build_email_summary, build_meeting_brief, build_pending_email_summary, build_reply_draft
 from app.daily_messages import build_daily_mode, build_municipal_radar, build_nightly_summary
 from app.linkedin import build_linkedin_ideas, build_linkedin_post, publish_text_post
@@ -38,7 +39,7 @@ def build_short_help() -> str:
         "- diario, cierre o radar municipal\n"
         "- metro o salir\n"
         "- gotas, resumen gotas, si, no o pendiente\n"
-        "- correo, pendientes, reunion <tema>\n"
+        "- calendario, correo, pendientes, reunion <tema>\n"
         "- recordar <texto + hora>, recordatorios o cancelar <texto>\n"
         "- terapia, recuerdo <texto> o audios\n"
         "- linkedin, post <tema> o publicar\n\n"
@@ -58,6 +59,7 @@ def build_extended_help() -> str:
         "- restriccion / restriccion manana: revisa tus autos configurados.\n\n"
         "Correo y trabajo:\n"
         "- correo: resumen ejecutivo del inbox reciente.\n"
+        "- calendario: muestra agenda Google de hoy.\n"
         "- pendientes: correos priorizados por accion.\n"
         "- reunion <tema>: prepara contexto de reunion con correos relacionados.\n"
         "- responder correo <tema>: arma un borrador de respuesta sin enviarlo.\n"
@@ -205,6 +207,9 @@ async def answer_message(text: str, from_number: str = "") -> str:
 
     if normalized in {"correo", "resumen correo", "gmail"}:
         return await build_email_summary()
+
+    if normalized in {"calendario", "calendar", "agenda google", "agenda del dia", "agenda del día"}:
+        return await build_calendar_daily_summary()
 
     if normalized in {"pendientes", "correos pendientes", "pendientes correo"}:
         return await build_pending_email_summary()

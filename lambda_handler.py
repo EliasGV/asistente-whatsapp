@@ -2,6 +2,7 @@ import asyncio
 
 from mangum import Mangum
 
+from app.calendar_client import build_calendar_daily_summary
 from app.config import settings
 from app.daily_messages import (
     build_0800_briefing,
@@ -77,6 +78,10 @@ async def handle_task(task: str, event: dict) -> dict[str, str]:
 
     if task == "daily-planning":
         await send_text_message(settings.personal_whatsapp_to, await build_daily_planning())
+        return {"status": "sent", "task": task}
+
+    if task == "calendar-daily-summary":
+        await send_text_message(settings.personal_whatsapp_to, await build_calendar_daily_summary())
         return {"status": "sent", "task": task}
 
     if task == "send-reminder":

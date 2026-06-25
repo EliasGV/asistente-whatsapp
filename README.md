@@ -10,6 +10,7 @@ Bot personal conectado a WhatsApp Cloud API.
 - `restriccion manana`: revisa la restriccion para el dia siguiente.
 - `correo`: resumen de correos recientes relevantes.
 - `pendientes`: posibles correos que requieren accion.
+- `calendario`: agenda Google de hoy.
 - `agenda`: agenda manual guardada en la conversacion.
 - `agenda <texto>`: agrega un punto a la agenda manual.
 - `checklist`: checklist laboral rapido.

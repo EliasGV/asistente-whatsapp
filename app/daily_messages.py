@@ -1,3 +1,4 @@
+from app.calendar_client import build_calendar_daily_summary
 from app.gmail_client import build_email_summary, build_pending_email_summary
 from app.metro import build_metro_service_report
 from app.news import build_news_digest
@@ -45,8 +46,10 @@ async def build_email_digest() -> str:
 
 async def build_daily_planning() -> str:
     email = await build_pending_email_summary()
+    calendar = await build_calendar_daily_summary()
     return (
         "Planificacion rapida del dia:\n\n"
+        f"{calendar}\n\n"
         f"{build_work_checklist()}\n\n"
         f"{email}"
     )
@@ -56,6 +59,7 @@ async def build_daily_mode(user: str) -> str:
     weather = await build_weather_report()
     metro = await build_metro_service_report()
     pending = await build_pending_email_summary()
+    calendar = await build_calendar_daily_summary()
     return (
         "Modo diario:\n\n"
         f"{weather}\n\n"
@@ -64,6 +68,7 @@ async def build_daily_mode(user: str) -> str:
         f"{build_agenda(user)}\n\n"
         f"{build_reminders(user)}\n\n"
         f"{build_eye_drops_status(user)}\n\n"
+        f"{calendar}\n\n"
         f"{pending}"
     )
 

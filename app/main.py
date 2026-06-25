@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import PlainTextResponse, RedirectResponse
 
+from app.calendar_client import build_calendar_daily_summary
 from app.config import settings
 from app.daily_messages import (
     build_0800_briefing,
@@ -203,6 +204,14 @@ async def send_daily_planning(request: Request) -> dict[str, str]:
     verify_task_secret(payload.get("secret"))
     await send_text_message(settings.personal_whatsapp_to, await build_daily_planning())
     return {"status": "sent", "task": "daily-planning"}
+
+
+@app.post("/tasks/calendar-daily-summary")
+async def send_calendar_daily_summary(request: Request) -> dict[str, str]:
+    payload = await request.json() if await request.body() else {}
+    verify_task_secret(payload.get("secret"))
+    await send_text_message(settings.personal_whatsapp_to, await build_calendar_daily_summary())
+    return {"status": "sent", "task": "calendar-daily-summary"}
 
 
 @app.post("/tasks/nightly-summary")
