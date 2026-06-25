@@ -57,7 +57,12 @@ async def fetch_today_events(max_results: int = 12) -> list[dict]:
 
     async with httpx.AsyncClient(timeout=30, headers=headers) as client:
         response = await client.get(f"{CALENDAR_API_URL}/calendars/primary/events", params=params)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            raise RuntimeError(
+                f"Google Calendar API {response.status_code}: {response.text[:1000]}"
+            ) from exc
         return response.json().get("items", [])
 
 
