@@ -20,14 +20,29 @@ from app.transcribe_audio import collect_finished_audio_memories
 from app.whatsapp import send_text_message
 
 
-api_handler = Mangum(app)
+api_handler = None
+
+
+def _ensure_event_loop() -> None:
+    try:
+        asyncio.get_event_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
+
+
+def _api_handler():
+    global api_handler
+    _ensure_event_loop()
+    if api_handler is None:
+        api_handler = Mangum(app)
+    return api_handler
 
 
 def handler(event, context):
     task = event.get("task") if isinstance(event, dict) else None
     if task:
         return asyncio.run(handle_task(task, event))
-    return api_handler(event, context)
+    return _api_handler()(event, context)
 
 
 async def handle_task(task: str, event: dict) -> dict[str, str]:
