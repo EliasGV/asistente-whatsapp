@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import uuid4
 from zoneinfo import ZoneInfo
 
 from app.config import settings
@@ -8,7 +9,7 @@ _local_items: dict[str, list[dict[str, str]]] = {}
 
 
 def now_iso() -> str:
-    return datetime.now(ZoneInfo(settings.timezone)).isoformat(timespec="seconds")
+    return datetime.now(ZoneInfo(settings.timezone)).isoformat(timespec="microseconds")
 
 
 def now_label() -> str:
@@ -26,7 +27,7 @@ def put_item(user: str, category: str, text: str, extra: dict[str, str] | None =
     created_at = now_iso()
     item = {
         "pk": f"USER#{user}",
-        "sk": f"{category.upper()}#{created_at}",
+        "sk": f"{category.upper()}#{created_at}#{uuid4().hex[:8]}",
         "category": category,
         "text": text,
         "created_at": created_at,

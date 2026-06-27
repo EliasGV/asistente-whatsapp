@@ -38,7 +38,7 @@ def build_short_help() -> str:
         "Soy tu asistente personal. Puedes escribirme:\n"
         "- diario, cierre o radar municipal\n"
         "- metro o salir\n"
-        "- gotas, resumen gotas, si, no o pendiente\n"
+        "- gotas, historial gotas, resumen gotas, si, no o pendiente\n"
         "- calendario, correo, pendientes, reunion <tema>\n"
         "- recordar <texto + hora>, recordatorios o cancelar <texto>\n"
         "- terapia, recuerdo <texto> o audios\n"
@@ -78,7 +78,7 @@ def build_extended_help() -> str:
         "- cumplido <palabra clave>: marca un pendiente como cumplido.\n\n"
         "Salud y terapia:\n"
         "- si / no / si gotas / no gotas: registra si te pusiste las gotas.\n"
-        "- gotas / mis gotas / gotas hoy: muestra registro.\n"
+        "- gotas / historial gotas / mis gotas: muestra registro.\n"
         "- resumen gotas: muestra cumplimiento de los ultimos 7 dias.\n"
         "- animo 3 cansado: registra animo del dia para el cierre diario.\n"
         "- recuerdo <texto>: guarda algo para terapia.\n"
@@ -227,7 +227,7 @@ async def answer_message(text: str, from_number: str = "") -> str:
     if normalized in {"resumen gotas", "reporte gotas", "semana gotas", "gotas semana"}:
         return build_eye_drops_weekly_summary(from_number)
 
-    if normalized in {"gotas", "estado gotas", "registro gotas", "mis gotas", "gotas hoy", "ver gotas"}:
+    if normalized in {"gotas", "estado gotas", "registro gotas", "historial gotas", "mis gotas", "gotas hoy", "ver gotas"}:
         return build_eye_drops_status(from_number)
 
     if normalized in {"mas tecnico", "más técnico", "mas tecnica", "más técnica"}:

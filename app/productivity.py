@@ -90,7 +90,7 @@ def record_eye_drops(user: str, text: str) -> str:
 
 
 def build_eye_drops_status(user: str) -> str:
-    records = list_items(user, "eye_drops", limit=6)
+    records = list_items(user, "eye_drops", limit=20)
     if not records:
         return (
             "Todavia no tengo confirmaciones de gotas registradas.\n\n"
@@ -102,13 +102,15 @@ def build_eye_drops_status(user: str) -> str:
     lines = [
         "Registro de gotas:",
         f"Ultimo estado: {latest_status} ({latest.get('label', latest['created_at'])})",
+        f"Registros encontrados: {len(records)}",
         "",
-        "Ultimos registros:",
+        "Historial reciente:",
     ]
     lines.extend(
         f"- {item.get('label', item['created_at'])} - {_period_label(item.get('period', ''))}: {item.get('status', item.get('text', 'registrado'))}"
         for item in records
     )
+    lines.append("\nPara ver cumplimiento semanal escribe: resumen gotas.")
     return "\n".join(lines)
 
 
